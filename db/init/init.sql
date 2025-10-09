@@ -99,7 +99,7 @@ CREATE TABLE messages (
 CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
-    type VARCHAR(50),  -- like, view, message, match, unlike
+    type ENUM('like', 'view', 'message', 'match', 'unlike'),
     source_user_id INT REFERENCES users(id),
     read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
