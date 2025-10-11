@@ -9,19 +9,37 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import illustration from "@/assets/illustration.png";
-import { type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { AuthAPI } from "@/api/auth";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // Handle login logic here
-    toast("Hey");
-  };
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
 
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      const { accessToken } = await AuthAPI.login(username, password);
+      login(accessToken);
+      navigate("/");
+      toast.success("Logged in successfully");
+    } catch (error) {
+      // TODO: Check what's the API returns and display the right error message
+      toast.error("Invalid credentials");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
@@ -41,6 +59,8 @@ export function LoginForm({
                   type="username"
                   placeholder="Username"
                   required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </Field>
               <Field>
@@ -53,10 +73,18 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <Input id="password" type="password" required />
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </Field>
               <Field>
-                <Button type="submit">Login</Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Logging in..." : "Login"}
+                </Button>
               </Field>
               <FieldDescription className="text-center">
                 Don&apos;t have an account? <a href="/sign-up">Sign up</a>

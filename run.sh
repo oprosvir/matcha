@@ -27,7 +27,8 @@ case $COMMAND in
     echo ""
     echo -e "Frontend: ${BLUE}http://localhost:5173${NC}"
     echo -e "Backend:  ${BLUE}http://localhost:3000${NC}"
-    echo -e "Database: ${BLUE}localhost:5432${NC}"
+    echo -e "Database: ${BLUE}http://localhost:5432${NC}"
+    echo -e "Redis:    ${BLUE}http://localhost:6379${NC}"
     ;;
   
   stop)

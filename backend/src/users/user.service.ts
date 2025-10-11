@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class UserService {
   // Todo: Any other way to do this?
-  private pool = new Pool({
+  private readonly pool = new Pool({
     user: process.env.DB_USER,
     host: process.env.DB_HOST,
     database: process.env.DB_NAME,
@@ -37,9 +37,24 @@ export class UserService {
     return rows[0];
   }
 
-  async validatePassword(username: string, plainPassword: string): Promise<boolean> {
+  async validatePassword(username: string, password: string): Promise<boolean> {
     const user = await this.findByUsername(username);
     if (!user) return false;
-    return bcrypt.compare(plainPassword, user.password);
+    return bcrypt.compare(password, user.password_hash);
+  }
+
+  async updatePassword(userId: string, newPassword: string): Promise<void> {
+    const hash = await bcrypt.hash(newPassword, 10);
+    await this.pool.query(
+      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+      [hash, userId],
+    );
+  }
+
+  async updateEmailVerified(userId: string, isEmailVerified: boolean): Promise<void> {
+    await this.pool.query(
+      'UPDATE users SET is_email_verified = $1, updated_at = NOW() WHERE id = $2',
+      [isEmailVerified, userId],
+    );
   }
 }

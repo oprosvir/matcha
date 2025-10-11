@@ -13,6 +13,7 @@ import { useState, type FormEvent } from "react";
 import { AuthAPI } from "@/api/auth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function SignupForm({
   className,
@@ -26,22 +27,24 @@ export function SignupForm({
   const [username, setUsername] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       setIsLoading(true);
-      const response = await AuthAPI.register(
+      const { accessToken } = await AuthAPI.register(
         email,
         password,
         firstName,
         lastName,
         username
       );
-      console.log(response);
-      localStorage.setItem("token", response.access_token);
+      login(accessToken);
       toast.success("Account created successfully");
-      navigate("/");
+      navigate("/verify-email");
     } catch (error) {
+      // TODO: Check what's the API returns and display the right error message
       toast.error("Error creating account");
     } finally {
       setIsLoading(false);

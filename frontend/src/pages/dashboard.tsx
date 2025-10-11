@@ -1,9 +1,17 @@
 import { UsersAPI } from "@/api/users";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/sign-in");
+  };
+
   return (
     <>
       <Button
@@ -11,14 +19,10 @@ export function Dashboard() {
           const user = await UsersAPI.getCurrentUser();
           console.log(user);
         }}
-      ></Button>
-      <Button
-        variant="destructive"
-        onClick={() => {
-          localStorage.removeItem("token");
-          navigate("/sign-in");
-        }}
       >
+        Get User
+      </Button>
+      <Button variant="destructive" onClick={handleLogout}>
         Logout
       </Button>
     </>

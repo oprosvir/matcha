@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { UsersAPI, type User } from '../api/users';
+import { tokenManager } from '@/utils/tokenManager';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UseCurrentUserReturn {
   user: User | null;
@@ -13,11 +15,12 @@ export function useCurrentUser(): UseCurrentUserReturn {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   const fetchUser = useCallback(async () => {
-    const token = localStorage.getItem('token');
+    const hasToken = tokenManager.hasToken();
 
-    if (!token) {
+    if (!hasToken) {
       setUser(null);
       setIsLoading(false);
       setError(null);
@@ -32,23 +35,25 @@ export function useCurrentUser(): UseCurrentUserReturn {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch user');
       setUser(null);
-      // Clear invalid token
-      localStorage.removeItem('token');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    if (isAuthenticated) {
+      fetchUser();
+    } else {
+      setUser(null);
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, fetchUser]);
 
   return {
     user,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated,
     error,
     refetch: fetchUser,
   };
 }
-

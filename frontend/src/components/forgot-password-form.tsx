@@ -11,18 +11,33 @@ import { Input } from "@/components/ui/input";
 import illustration from "@/assets/illustration.png";
 import { toast } from "sonner";
 import { type FormEvent, useState, useEffect } from "react";
+import { AuthAPI } from "@/api/auth";
 
 export function ForgotPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const [email, setEmail] = useState("");
   const [isSentButtonDisabled, setIsSentButtonDisabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSentButtonDisabled(true);
-    setTimeLeft(60);
-    toast.success("The password reset link has been sent");
+
+    try {
+      setIsLoading(true);
+      await AuthAPI.forgotPassword(email);
+      toast.success(
+        `Thanks! We've sent a link to ${email} if an account exists.`
+      );
+      setIsSentButtonDisabled(true);
+      setTimeLeft(60);
+    } catch (error) {
+      toast.error("Failed to send reset link. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
   useEffect(() => {
     if (isSentButtonDisabled && timeLeft > 0) {
@@ -53,17 +68,26 @@ export function ForgotPasswordForm({
                 </p>
               </div>
               <Field>
-                <FieldLabel htmlFor="username">Email</FieldLabel>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
                   type="email"
                   placeholder="m@example.com"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </Field>
               <Field>
-                <Button type="submit" disabled={isSentButtonDisabled}>
-                  {isSentButtonDisabled ? `Resend in ${timeLeft}s` : "Send"}
+                <Button
+                  type="submit"
+                  disabled={isSentButtonDisabled || isLoading}
+                >
+                  {isLoading
+                    ? "Sending..."
+                    : isSentButtonDisabled
+                    ? `Resend in ${timeLeft}s`
+                    : "Send Reset Link"}
                 </Button>
               </Field>
               <FieldDescription className="text-center">

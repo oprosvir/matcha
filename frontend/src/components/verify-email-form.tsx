@@ -14,7 +14,7 @@ import { useCurrentUser } from "@/hooks";
 import { useNavigate } from "react-router-dom";
 import { Spinner } from "@/components/ui/spinner";
 
-export function ValidateEmailForm({
+export function VerifyEmailForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
@@ -42,7 +42,6 @@ export function ValidateEmailForm({
     }
   }, [isSentButtonDisabled, timeLeft]);
   useEffect(() => {
-    console.log(user);
     if (user?.is_email_verified) {
       navigate("/");
     }
@@ -56,7 +55,7 @@ export function ValidateEmailForm({
             <form className="p-6 md:p-8" onSubmit={handleSubmit}>
               <FieldGroup>
                 <div className="flex flex-col items-center gap-2 text-center">
-                  <h1 className="text-2xl font-bold">Validate your email</h1>
+                  <h1 className="text-2xl font-bold">Verify your email</h1>
                   <p className="text-muted-foreground">
                     We've sent a verification link to papekfoek@gmail.com. If
                     you don't see it within 5 minutes, please check your spam or
@@ -64,7 +63,7 @@ export function ValidateEmailForm({
                   </p>
                 </div>
                 <Field>
-                  <FieldLabel htmlFor="username">Email</FieldLabel>
+                  <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
                     id="email"
                     type="email"

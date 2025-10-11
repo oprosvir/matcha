@@ -14,6 +14,21 @@ services:
     networks:
       - matcha-network
 
+  redis:
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
+    container_name: redis
+    env_file:
+      - .env
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/data:/data
+    restart: always
+    networks:
+      - matcha-network
+
   backend:
     build:
       context: ./backend
@@ -28,6 +43,7 @@ services:
       - /app/node_modules
     depends_on:
       - db
+      - redis
     restart: always
     command: npm run start:dev
     networks:
