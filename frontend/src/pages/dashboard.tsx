@@ -9,7 +9,7 @@ export function Dashboard() {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/sign-in");
+    navigate("/auth/sign-in");
   };
 
   return (

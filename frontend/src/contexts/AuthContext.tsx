@@ -90,13 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initAuth = async () => {
       setIsLoading(true);
-
       const success = await refreshAccessToken();
-
       if (!success) {
         setIsAuthenticated(false);
       }
-
       setIsLoading(false);
     };
 

@@ -107,7 +107,7 @@ export class AuthService implements OnModuleInit {
       from: 'onboarding@resend.dev',
       to: user.email,
       subject: 'Reset your password for Matcha',
-      html: `<p>Click <a href="http://localhost:5173/sign-in/reset-password?token=${resetToken}">here</a> to reset your password.</p>`
+      html: `<p>Click <a href="http://localhost:5173/reset-password?token=${resetToken}">here</a> to reset your password.</p>`
     });
 
     return;
@@ -170,7 +170,7 @@ export class AuthService implements OnModuleInit {
       from: 'onboarding@resend.dev',
       to: user.email,
       subject: 'Verify your email for Matcha',
-      html: `<p>Click <a href="http://localhost:5173/sign-in/verify-email?token=${verifyEmailToken}">here</a> to verify your email.</p>`
+      html: `<p>Click <a href="http://localhost:5173/verify-email?token=${verifyEmailToken}">here</a> to verify your email.</p>`
     });
     return;
   }

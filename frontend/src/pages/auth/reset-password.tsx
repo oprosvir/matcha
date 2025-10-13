@@ -1,4 +1,3 @@
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -8,16 +7,12 @@ import {
   FieldDescription,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import illustration from "@/assets/illustration.png";
 import { toast } from "sonner";
 import { type FormEvent, useState, useEffect } from "react";
 import { AuthAPI } from "@/api/auth";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-export function ResetPasswordForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
@@ -69,7 +64,7 @@ export function ResetPasswordForm({
       setIsLoading(true);
       const { message } = await AuthAPI.resetPassword(token, password);
       toast.success(message);
-      navigate("/sign-in");
+      navigate("/auth/sign-in");
     } catch (error) {
       toast.error("Failed to reset password. Please try again.");
     } finally {
@@ -79,7 +74,7 @@ export function ResetPasswordForm({
 
   if (isVerifying) {
     return (
-      <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <div className="flex flex-col gap-6">
         <Card className="overflow-hidden p-0">
           <CardContent className="p-8">
             <div className="flex flex-col items-center gap-2 text-center">
@@ -93,7 +88,7 @@ export function ResetPasswordForm({
 
   if (!isValidToken) {
     return (
-      <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <div className="flex flex-col gap-6">
         <Card className="overflow-hidden p-0">
           <CardContent className="p-8">
             <div className="flex flex-col items-center gap-4 text-center">
@@ -102,7 +97,7 @@ export function ResetPasswordForm({
                 This password reset link is invalid or has expired. Please
                 request a new one.
               </p>
-              <Button onClick={() => navigate("/sign-in/forgot-password")}>
+              <Button onClick={() => navigate("/auth/forgot-password")}>
                 Request New Link
               </Button>
             </div>
@@ -113,60 +108,47 @@ export function ResetPasswordForm({
   }
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="overflow-hidden p-0">
-        <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-6 md:p-8" onSubmit={handleSubmit}>
-            <FieldGroup>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Enter your new password</h1>
-                <p className="text-muted-foreground text-sm">
-                  Choose a strong password to secure your account
-                </p>
-              </div>
-              <Field>
-                <FieldLabel htmlFor="password">New Password</FieldLabel>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  minLength={8}
-                />
-                <FieldDescription>
-                  Must be at least 8 characters long
-                </FieldDescription>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="confirm-password">
-                  Confirm New Password
-                </FieldLabel>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  minLength={8}
-                />
-              </Field>
-              <Field>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Changing Password..." : "Change Password"}
-                </Button>
-              </Field>
-            </FieldGroup>
-          </form>
-          <div className="bg-muted relative hidden md:block">
-            <img
-              src={illustration}
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-            />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <form className="p-6 md:p-8" onSubmit={handleSubmit}>
+      <FieldGroup>
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h1 className="text-2xl font-bold">Enter your new password</h1>
+          <p className="text-muted-foreground text-sm">
+            Choose a strong password to secure your account
+          </p>
+        </div>
+        <Field>
+          <FieldLabel htmlFor="password">New Password</FieldLabel>
+          <Input
+            id="password"
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={8}
+          />
+          <FieldDescription>
+            Must be at least 8 characters long
+          </FieldDescription>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="confirm-password">
+            Confirm New Password
+          </FieldLabel>
+          <Input
+            id="confirm-password"
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            minLength={8}
+          />
+        </Field>
+        <Field>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Changing Password..." : "Change Password"}
+          </Button>
+        </Field>
+      </FieldGroup>
+    </form>
   );
 }
