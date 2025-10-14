@@ -1,60 +1,95 @@
-import { Injectable } from '@nestjs/common';
-import { Pool } from 'pg';
+import { ConflictException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UsersRepository } from './repositories/users.repository';
+import { PublicUserResponseDto, PrivateUserResponseDto } from './dto/user-response.dto';
+import { User } from './repositories/users.repository';
 
 @Injectable()
 export class UserService {
-  // Todo: Any other way to do this?
-  private readonly pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
-  });
+  constructor(private readonly usersRepository: UsersRepository) { }
 
-  async findById(id: string) {
-    const { rows } = await this.pool.query('SELECT * FROM users WHERE id = $1', [id]);
-    return rows[0];
+  private mapUserToPublicUserResponseDto(user: User): PublicUserResponseDto | null {
+    if (!user) return null;
+    return {
+      firstName: user.first_name,
+      lastName: user.last_name,
+      gender: user.gender,
+      biography: user.biography,
+      fameRating: user.fame_rating,
+      latitude: user.latitude,
+      longitude: user.longitude,
+      lastTimeActive: user.last_time_active,
+      createdAt: user.created_at,
+    };
   }
 
-  async findByUsername(username: string) {
-    const { rows } = await this.pool.query('SELECT * FROM users WHERE username = $1', [username]);
-    return rows[0];
+  private mapUserToPrivateUserResponseDto(user: User): PrivateUserResponseDto {
+    return {
+      id: user.id,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      gender: user.gender,
+      sexualOrientation: user.sexual_orientation,
+      biography: user.biography,
+      fameRating: user.fame_rating,
+      latitude: user.latitude,
+      longitude: user.longitude,
+      lastTimeActive: user.last_time_active,
+      createdAt: user.created_at,
+      email: user.email,
+      username: user.username,
+      isEmailVerified: user.is_email_verified,
+    };
   }
 
-  async findByEmail(email: string) {
-    const { rows } = await this.pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    return rows[0];
+  async findByUsername(username: string): Promise<PrivateUserResponseDto | null> {
+    const user: User | null = await this.usersRepository.findByUsername(username);
+    if (!user) return null;
+    return this.mapUserToPrivateUserResponseDto(user);
   }
 
-  async create(email: string, password: string, firstName: string, lastName: string, username: string) {
-    const hash = await bcrypt.hash(password, 10);
-    const { rows } = await this.pool.query(
-      'INSERT INTO users(email, password_hash, first_name, last_name, username) VALUES ($1, $2, $3, $4, $5) RETURNING id, email',
-      [email, hash, firstName, lastName, username],
+  async findByEmailOrUsername(email: string, username: string): Promise<PrivateUserResponseDto | null> {
+    const user: User | null = await this.usersRepository.findByEmailOrUsername(email, username);
+    if (!user) return null;
+    return this.mapUserToPrivateUserResponseDto(user);
+  }
+
+  async findById(id: string): Promise<PrivateUserResponseDto | null> {
+    const user: User | null = await this.usersRepository.findById(id);
+    if (!user) return null;
+    return this.mapUserToPrivateUserResponseDto(user);
+  }
+
+  async findByEmail(email: string): Promise<PrivateUserResponseDto | null> {
+    const user: User | null = await this.usersRepository.findByEmail(email);
+    if (!user) return null;
+    return this.mapUserToPrivateUserResponseDto(user);
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<PrivateUserResponseDto> {
+    const existingUser = await this.findByEmailOrUsername(
+      createUserDto.email,
+      createUserDto.username,
     );
-    return rows[0];
+    if (existingUser) throw new ConflictException('Username or email already exists.'); // TODO: Implement generic http response
+    const passwordHash = await bcrypt.hash(createUserDto.password, 10);
+    const user: User = await this.usersRepository.create({ ...createUserDto, password: passwordHash });
+    return this.mapUserToPrivateUserResponseDto(user);
   }
 
   async validatePassword(username: string, password: string): Promise<boolean> {
-    const user = await this.findByUsername(username);
+    const user: User | null = await this.usersRepository.findByUsername(username);
     if (!user) return false;
     return bcrypt.compare(password, user.password_hash);
   }
 
   async updatePassword(userId: string, newPassword: string): Promise<void> {
     const hash = await bcrypt.hash(newPassword, 10);
-    await this.pool.query(
-      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
-      [hash, userId],
-    );
+    await this.usersRepository.updatePassword(userId, hash);
   }
 
   async updateEmailVerified(userId: string, isEmailVerified: boolean): Promise<void> {
-    await this.pool.query(
-      'UPDATE users SET is_email_verified = $1, updated_at = NOW() WHERE id = $2',
-      [isEmailVerified, userId],
-    );
+    await this.usersRepository.updateEmailVerified(userId, isEmailVerified);
   }
 }

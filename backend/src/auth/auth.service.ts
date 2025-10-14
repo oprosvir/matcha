@@ -1,176 +1,134 @@
-import { Injectable, UnauthorizedException, OnModuleInit, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
 import { UserService } from '../users/user.service';
 import * as jwt from 'jsonwebtoken';
-import { createClient } from 'redis';
 import * as crypto from 'crypto';
 import { Resend } from 'resend';
+import { PrivateUserResponseDto } from 'src/users/dto/user-response.dto';
+import { SignUpResponseDto } from './dto/sign-up-response.dto';
+import { SignInResponseDto } from './dto/sign-in-response.dto';
+import { AuthRepository } from './repositories/auth.repository';
 
 @Injectable()
-export class AuthService implements OnModuleInit {
-  constructor(private readonly userService: UserService) { }
+export class AuthService {
+  constructor(private readonly userService: UserService, private readonly authRepository: AuthRepository) { }
 
   private readonly ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
   private readonly REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
-  private readonly redisClient = createClient({
-    url: `redis://:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
-  });
   private readonly resend = new Resend(process.env.RESEND_API_KEY);
 
-  async onModuleInit() {
-    await this.redisClient.connect();
+  private isValidPassword(password: string): boolean {
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{12,}$/;
+    return strongPasswordRegex.test(password);
   }
 
-  async register(email: string, password: string, firstName: string, lastName: string, username: string) {
-    const existing = await this.userService.findByEmail(email);
-    if (existing) throw new UnauthorizedException('Email already in use');
-    const user = await this.userService.create(email, password, firstName, lastName, username);
-    const accessToken = this.generateAccessToken(user);
-    const refreshToken = await this.generateRefreshToken(user);
-    return { accessToken, refreshToken, userId: user.id };
-  }
-
-  async login(username: string, password: string) {
-    const valid = await this.userService.validatePassword(username, password);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
-    const user = await this.userService.findByUsername(username);
-    const accessToken = this.generateAccessToken(user);
-    const refreshToken = await this.generateRefreshToken(user);
-    return { accessToken, refreshToken, userId: user.id };
-  }
-
-  async revokeRefreshToken(userId: string) {
-    await this.redisClient.del(`refresh_token:${userId}`);
-  }
-
-  private generateAccessToken(user: { id: string, email: string }) {
+  private generateAccessToken(user: { id: string, email: string }): string {
     return jwt.sign({ sub: user.id, email: user.email }, this.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
   }
 
-  async generateRefreshToken(user: any) {
+  private async revokeVerifyEmailToken(token: string) {
+    await this.authRepository.deleteEntry(`verify_email:${token}`);
+  }
+
+
+  private async revokePasswordResetToken(token: string) {
+    await this.authRepository.deleteEntry(`password_reset:${token}`);
+  }
+
+  private async generateRefreshToken(user: { id: string }): Promise<string> {
     const refreshToken = jwt.sign({ sub: user.id }, this.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
-    await this.redisClient.set(`refresh_token:${user.id}`, refreshToken, { EX: 7 * 24 * 60 * 60 });
+    await this.authRepository.setEntry(`refresh_token:${user.id}`, refreshToken, 7 * 24 * 60 * 60);
     return refreshToken;
   }
 
+  async revokeRefreshToken(userId: string) {
+    await this.authRepository.deleteEntry(`refresh_token:${userId}`);
+  }
+
+  async signUp(email: string, password: string, firstName: string, lastName: string, username: string): Promise<SignUpResponseDto> {
+    if (!this.isValidPassword(password)) throw new BadRequestException('Password is not strong enough');
+    const existingUser: PrivateUserResponseDto | null = await this.userService.findByEmailOrUsername(email, username);
+    if (existingUser) throw new ConflictException('Email or username already exists');
+    const newUser: PrivateUserResponseDto = await this.userService.create({ username, email, firstName, lastName, password });
+    const accessToken = this.generateAccessToken({ id: newUser.id, email: newUser.email });
+    const refreshToken = await this.generateRefreshToken({ id: newUser.id });
+    return { accessToken, refreshToken, userId: newUser.id };
+  }
+
+  async signIn(username: string, password: string): Promise<SignInResponseDto> {
+    const user = await this.userService.findByUsername(username);
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+    const valid = await this.userService.validatePassword(username, password);
+    if (!valid) throw new UnauthorizedException('Invalid credentials');
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
+    return { accessToken, refreshToken };
+  }
+
   async refresh(refreshToken: string) {
-    if (!refreshToken) {
-      throw new UnauthorizedException('No refresh token provided');
-    }
-
+    if (!refreshToken) throw new BadRequestException('No refresh token provided');
     try {
-      // Verify the refresh token signature
       const payload: any = jwt.verify(refreshToken, this.REFRESH_TOKEN_SECRET);
-
-      // Check if the refresh token exists in Redis
-      const storedToken = await this.redisClient.get(`refresh_token:${payload.sub}`);
-      if (!storedToken || storedToken !== refreshToken) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      // Get user and generate new access token
+      const storedToken = await this.authRepository.getEntry(`refresh_token:${payload.sub}`);
+      if (!storedToken || storedToken !== refreshToken) throw new BadRequestException('Invalid refresh token');
       const user = await this.userService.findById(payload.sub);
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
+      if (!user) throw new BadRequestException('User not found');
       const accessToken = this.generateAccessToken(user);
       return { accessToken };
     } catch (error) {
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-      if (error instanceof jwt.TokenExpiredError) {
-        throw new UnauthorizedException('Refresh token expired');
-      }
+      if (error instanceof jwt.JsonWebTokenError) throw new BadRequestException('Invalid refresh token');
+      if (error instanceof jwt.TokenExpiredError) throw new BadRequestException('Refresh token expired');
       throw error;
     }
   }
 
   async requestPasswordReset(email: string): Promise<void> {
     const user = await this.userService.findByEmail(email);
-
-    if (!user) {
-      return;
-    }
-
-    // Generate a secure random token
+    if (!user) throw new BadRequestException('User not found');
     const resetToken = crypto.randomBytes(32).toString('hex');
-
-    // Store token in Redis with 1 hour expiration
-    await this.redisClient.set(
-      `password_reset:${resetToken}`,
-      user.id.toString(),
-      { EX: 60 * 60 } // 1 hour
-    );
-
+    await this.authRepository.setEntry(`password_reset:${resetToken}`, user.id, 60 * 60);
     this.resend.emails.send({
       from: 'onboarding@resend.dev',
       to: user.email,
       subject: 'Reset your password for Matcha',
-      html: `<p>Click <a href="http://localhost:5173/reset-password?token=${resetToken}">here</a> to reset your password.</p>`
+      html: `<p>Click <a href="http://localhost:5173/auth/reset-password?token=${resetToken}">here</a> to reset your password.</p>`
     });
-
     return;
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    if (!token || !newPassword) {
-      throw new BadRequestException('Token and new password are required');
-    }
-
-    // TODO: Validate password strength
-
-    const userId = await this.redisClient.get(`password_reset:${token}`);
-
-    if (!userId) {
-      throw new UnauthorizedException('Invalid or expired reset token');
-    }
-
+    if (!token || !newPassword) throw new BadRequestException('Token and new password are required');
+    if (!this.isValidPassword(newPassword)) throw new BadRequestException('Password is not strong enough');
+    const userId = await this.authRepository.getEntry(`password_reset:${token}`);
+    if (!userId) throw new BadRequestException('Invalid or expired reset token');
     await this.userService.updatePassword(userId, newPassword);
-
-    await this.redisClient.del(`password_reset:${token}`);
-
-    await this.revokeRefreshToken(userId);
+    await this.revokePasswordResetToken(token); // Revoke password reset token
+    await this.revokeRefreshToken(userId); // Revoke refresh token
   }
 
   async verifyResetToken(token: string): Promise<boolean> {
-    const userId = await this.redisClient.get(`password_reset:${token}`);
+    const userId = await this.authRepository.getEntry(`password_reset:${token}`);
     return !!userId;
   }
 
-  async verifyEmail(token: string): Promise<void> {
-    const userId = await this.redisClient.get(`verify_email:${token}`);
-    if (!userId) {
-      throw new UnauthorizedException('Invalid or expired verify email token');
-    }
+  async verifyEmail(token: string): Promise<boolean> {
+    const userId = await this.authRepository.getEntry(`verify_email:${token}`); // Verify email verification token
+    if (!userId) return false;
     await this.userService.updateEmailVerified(userId, true);
-    await this.revokeVerifyEmailToken(userId);
-  }
-
-  async verifyEmailToken(token: string): Promise<boolean> {
-    const userId = await this.redisClient.get(`verify_email:${token}`);
-    return !!userId;
-  }
-
-  async revokeVerifyEmailToken(userId: string) {
-    await this.redisClient.del(`verify_email:${userId}`);
+    await this.revokeVerifyEmailToken(token);
+    return true;
   }
 
   async sendVerifyEmail(email: string): Promise<void> {
     const user = await this.userService.findByEmail(email);
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-    if (user.is_email_verified) {
-      throw new UnauthorizedException('Email already verified');
-    }
+    if (!user) throw new BadRequestException('User not found');
+    if (user.isEmailVerified) throw new BadRequestException('Email already verified');
     const verifyEmailToken = crypto.randomBytes(32).toString('hex');
-    await this.redisClient.set(`verify_email:${verifyEmailToken}`, user.id.toString(), { EX: 60 * 60 });
+    await this.authRepository.setEntry(`verify_email:${verifyEmailToken}`, user.id.toString(), 60 * 60);
     this.resend.emails.send({
       from: 'onboarding@resend.dev',
       to: user.email,
       subject: 'Verify your email for Matcha',
-      html: `<p>Click <a href="http://localhost:5173/verify-email?token=${verifyEmailToken}">here</a> to verify your email.</p>`
+      html: `<p>Click <a href="http://localhost:5173/auth/verify-email?token=${verifyEmailToken}">here</a> to verify your email.</p>`
     });
     return;
   }
