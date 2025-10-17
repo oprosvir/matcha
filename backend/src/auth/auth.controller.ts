@@ -19,7 +19,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // Refresh token expires in 7 days
     });
 
-    return { accessToken };
+    return { success: true, data: { accessToken }, messageKey: 'SUCCESS_SIGNED_UP' };
   }
 
   @Post('sign-in')
@@ -30,7 +30,7 @@ export class AuthController {
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // Refresh token expires in 7 days
     });
-    return { accessToken };
+    return { success: true, data: { accessToken }, messageKey: 'SUCCESS_SIGNED_IN' };
   }
 
   @UseGuards(AuthGuard)
