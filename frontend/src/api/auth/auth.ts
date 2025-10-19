@@ -8,7 +8,6 @@ import {
   type RefreshTokenResponse,
   type SendPasswordResetEmailRequest,
   type ResetPasswordRequest,
-  type SendVerifyEmailRequest,
   type VerifyEmailRequest,
   SignUpResponseSchema,
   SignInResponseSchema,
@@ -41,8 +40,8 @@ export const authApi = {
     return parseApiResponse(apiClient.post('/auth/reset-password', request), EmptyResponseSchema);
   },
 
-  sendVerifyEmail: async (request: SendVerifyEmailRequest): Promise<EmptyResponse> => {
-    return parseApiResponse(apiClient.post('/auth/send-verify-email', request), EmptyResponseSchema);
+  sendVerifyEmail: async (): Promise<EmptyResponse> => {
+    return parseApiResponse(apiClient.post('/auth/send-verify-email'), EmptyResponseSchema);
   },
 
   verifyEmail: async (request: VerifyEmailRequest): Promise<EmptyResponse> => {

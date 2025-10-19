@@ -15,7 +15,7 @@ export function VerifyEmail() {
     if (token) {
       verifyEmail(token);
     }
-  }, [token, verifyEmail]);
+  }, [token]);
 
   if (!token) {
     return (
@@ -66,8 +66,10 @@ export function VerifyEmail() {
             <div className="flex flex-col items-center gap-4 text-center">
               <h1 className="text-2xl font-bold">Email Verified</h1>
               <p className="text-muted-foreground">
-                Your email has been verified successfully.
+                Your email has been verified successfully. You can now sign in
+                to your account.
               </p>
+              <Button onClick={() => navigate("/auth/sign-in")}>Sign In</Button>
             </div>
           </CardContent>
         </Card>

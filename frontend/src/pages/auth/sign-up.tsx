@@ -11,20 +11,66 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSignUp } from "@/hooks/useSignUp";
 
-const schema = z.object({
-  email: z.string(),
-  username: z.string().min(3),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  password: z.string().min(6),
-  confirmPassword: z.string().min(6),
-});
+const schema = z
+  .object({
+    email: z.string().email({ message: "Invalid email address" }),
+    username: z
+      .string()
+      .min(3, { message: "Username must be at least 3 characters long" })
+      .max(50, { message: "Username must be less than 50 characters long" })
+      .regex(/^[a-zA-Z0-9]+$/, {
+        message: "Username must contain only letters and numbers",
+      }),
+    firstName: z
+      .string()
+      .min(2, { message: "First name must be at least 2 characters long" })
+      .max(50, { message: "First name must be less than 50 characters long" })
+      .regex(/^[a-zA-ZÀ-ÿ\s\-']+$/, {
+        message:
+          "First name can contain letters, spaces, hyphens, and apostrophes",
+      }),
+    lastName: z
+      .string()
+      .min(2, { message: "Last name must be at least 2 characters long" })
+      .max(50, { message: "Last name must be less than 50 characters long" })
+      .regex(/^[a-zA-ZÀ-ÿ\s\-']+$/, {
+        message:
+          "Last name can contain letters, spaces, hyphens, and apostrophes",
+      }),
+    password: z
+      .string()
+      .min(12, { message: "Password must be at least 12 characters long" })
+      .regex(/[a-z]/, {
+        message: "Password must contain at least one lowercase letter",
+      })
+      .regex(/[A-Z]/, {
+        message: "Password must contain at least one uppercase letter",
+      })
+      .regex(/\d/, { message: "Password must contain at least one number" })
+      .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, {
+        message:
+          "Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;':\",./<>?)",
+      }), //TODO: Check if it doesn't contain common english words
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type FormData = z.infer<typeof schema>;
 
 export function Signup() {
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      email: "",
+      username: "",
+      firstName: "",
+      lastName: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
   const { signUp, isPending } = useSignUp();
@@ -50,60 +96,92 @@ export function Signup() {
         </div>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input {...form.register("email")} />
+          <Input
+            id="email"
+            type="email"
+            placeholder="Enter your email"
+            {...form.register("email")}
+          />
           {form.formState.errors.email && (
-            <p className="text-red-500">
+            <p className="text-red-500 text-sm">
               {form.formState.errors.email.message}
             </p>
           )}
         </Field>
         <Field>
-          <FieldLabel htmlFor="username">Username</FieldLabel>{" "}
-          <Input {...form.register("username")} />
+          <FieldLabel htmlFor="username">Username</FieldLabel>
+          <Input
+            id="username"
+            type="text"
+            placeholder="Choose a username"
+            {...form.register("username")}
+          />
           {form.formState.errors.username && (
-            <p className="text-red-500">
+            <p className="text-red-500 text-sm">
               {form.formState.errors.username.message}
             </p>
           )}
         </Field>
-        <Field>
-          <Field className="grid grid-cols-2 gap-4">
-            <Field>
-              <FieldLabel htmlFor="first-name">First Name</FieldLabel>
-              <Input {...form.register("firstName")} />
-              {form.formState.errors.firstName && (
-                <p className="text-red-500">
-                  {form.formState.errors.firstName.message}
-                </p>
-              )}
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="last-name">Last Name</FieldLabel>
-              <Input {...form.register("lastName")} />
-              {form.formState.errors.lastName && (
-                <p className="text-red-500">
-                  {form.formState.errors.lastName.message}
-                </p>
-              )}
-            </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field>
+            <FieldLabel htmlFor="first-name">First Name</FieldLabel>
+            <Input
+              id="first-name"
+              type="text"
+              placeholder="Enter your first name"
+              {...form.register("firstName")}
+            />
+            {form.formState.errors.firstName && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.firstName.message}
+              </p>
+            )}
           </Field>
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="password">Password</FieldLabel>
-          <Input {...form.register("password")} type="password" />
-          {form.formState.errors.password && (
-            <p className="text-red-500">
-              {form.formState.errors.password.message}
-            </p>
-          )}
-          <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
-          <Input {...form.register("confirmPassword")} type="password" />
-          {form.formState.errors.confirmPassword && (
-            <p className="text-red-500">
-              {form.formState.errors.confirmPassword.message}
-            </p>
-          )}
-        </Field>
+          <Field>
+            <FieldLabel htmlFor="last-name">Last Name</FieldLabel>
+            <Input
+              id="last-name"
+              type="text"
+              placeholder="Enter your last name"
+              {...form.register("lastName")}
+            />
+            {form.formState.errors.lastName && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.lastName.message}
+              </p>
+            )}
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Field>
+            <FieldLabel htmlFor="password">Password</FieldLabel>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Create your password"
+              {...form.register("password")}
+            />
+            {form.formState.errors.password && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.password.message}
+              </p>
+            )}
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+            <Input
+              id="confirm-password"
+              type="password"
+              placeholder="Confirm your password"
+              {...form.register("confirmPassword")}
+            />
+            {form.formState.errors.confirmPassword && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.confirmPassword.message}
+              </p>
+            )}
+          </Field>
+        </div>
         <Button type="submit" disabled={isPending}>
           Create Account
         </Button>

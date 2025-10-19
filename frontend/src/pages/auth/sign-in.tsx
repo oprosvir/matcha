@@ -6,36 +6,37 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useState, type FormEvent } from "react";
-import { toast } from "sonner";
-import { authApi } from "@/api/auth/auth";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useForm } from "react-hook-form";
+import { useSignIn } from "@/hooks/useSignIn";
+
+interface SignInFormData {
+  username: string;
+  password: string;
+}
 
 export function Signin() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signInUser, isPending } = useSignIn();
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-      const response = await authApi.signIn({ username, password });
-      if (response.success) {
-        signIn(response.data.accessToken);
-        toast.success("Logged in successfully");
-        navigate("/");
-      } else {
-        toast.error("Invalid credentials");
-      }
-    } catch (err) {
-      toast.error("Invalid credentials");
-    }
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<SignInFormData>({
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = (data: SignInFormData) => {
+    signInUser({
+      username: data.username,
+      password: data.password,
+    });
   };
 
   return (
-    <form className="p-6 md:p-8" onSubmit={handleSubmit}>
+    <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-2xl font-bold">Welcome back</h1>
@@ -47,11 +48,9 @@ export function Signin() {
           <FieldLabel htmlFor="username">Username</FieldLabel>
           <Input
             id="username"
-            type="username"
+            type="text"
             placeholder="Username"
-            required
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            {...register("username", { required: "Username is required" })}
           />
         </Field>
         <Field>
@@ -67,13 +66,13 @@ export function Signin() {
           <Input
             id="password"
             type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            {...register("password", { required: "Password is required" })}
           />
         </Field>
         <Field>
-          <Button type="submit">Sign In</Button>
+          <Button type="submit" disabled={isPending || isSubmitting}>
+            {isPending || isSubmitting ? "Signing In..." : "Sign In"}
+          </Button>
         </Field>
         <FieldDescription className="text-center">
           Don&apos;t have an account? <a href="/auth/sign-up">Sign Up</a>

@@ -1,4 +1,4 @@
-import { apiClient } from '../client';
+import apiClient from '@/lib/apiClient';
 import { parseApiResponse } from '../parseResponse';
 import { EmptyResponseSchema, type EmptyResponse } from '../schema';
 import { GetOwnProfileResponseSchema } from './schema';

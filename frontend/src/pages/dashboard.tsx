@@ -19,7 +19,6 @@ export function Dashboard() {
         onClick={async () => {
           const user = await userApi.getOwnProfile();
           if (user.success) {
-            console.log(user.data);
             toast.success("Successfully fetched user profile");
           } else {
             toast.error("Failed to fetch user profile");

@@ -2,16 +2,22 @@ import { authApi } from "@/api/auth/auth";
 import { type SignUpRequest, type SignUpResponse } from "@/api/auth/schema";
 import { toast } from "sonner";
 import { getToastMessage } from "@/lib/messageMap";
-import { type EmptyResponse } from "@/api/schema";
+import { type EmptyErrorResponse } from "@/api/schema";
 import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useSignUp() {
+  const { signIn } = useAuth();
+
   const signUpMutation = useMutation({
     mutationFn: (data: SignUpRequest) => authApi.signUp(data),
     onSuccess: (response: SignUpResponse) => {
-      toast.success(getToastMessage(response.messageKey));
+      if (response.success) {
+        signIn(response.data.accessToken);
+        toast.success(getToastMessage(response.messageKey));
+      }
     },
-    onError: (response: EmptyResponse) => {
+    onError: (response: EmptyErrorResponse) => {
       toast.error(getToastMessage(response.messageKey));
     },
   });

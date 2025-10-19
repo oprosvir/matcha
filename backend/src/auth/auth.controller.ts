@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Res, Req, UnauthorizedException, Get, UseGuards, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Res, Req, Get, UseGuards, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import type { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { AuthGuard } from './auth.guard';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
+import { CurrentUser } from './current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -37,9 +38,9 @@ export class AuthController {
   @Post('sign-out')
   async signOut(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies['refresh_token'];
-    if (!refreshToken) throw new UnauthorizedException(new CustomHttpException('NO_REFRESH_TOKEN_PROVIDED', 'No refresh token provided', 'ERROR_NO_REFRESH_TOKEN_PROVIDED', HttpStatus.UNAUTHORIZED));
+    if (!refreshToken) throw new CustomHttpException('NO_REFRESH_TOKEN_PROVIDED', 'No refresh token provided', 'ERROR_NO_REFRESH_TOKEN_PROVIDED', HttpStatus.UNAUTHORIZED);
     const payload: any = jwt.decode(refreshToken);
-    if (!payload?.sub) throw new UnauthorizedException(new CustomHttpException('INVALID_REFRESH_TOKEN', 'Invalid refresh token', 'ERROR_INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED));
+    if (!payload?.sub) throw new CustomHttpException('INVALID_REFRESH_TOKEN', 'Invalid refresh token', 'ERROR_INVALID_REFRESH_TOKEN', HttpStatus.UNAUTHORIZED);
     await this.authService.revokeRefreshToken(payload.sub);
     res.clearCookie('refresh_token', {
       httpOnly: true,
@@ -51,7 +52,7 @@ export class AuthController {
   @Get('refresh-token')
   async refreshToken(@Req() req: Request) {
     const refreshToken = req.cookies['refresh_token'];
-    if (!refreshToken) throw new UnauthorizedException(new CustomHttpException('NO_REFRESH_TOKEN_PROVIDED', 'No refresh token provided', 'ERROR_NO_REFRESH_TOKEN_PROVIDED', HttpStatus.UNAUTHORIZED));
+    if (!refreshToken) throw new CustomHttpException('NO_REFRESH_TOKEN_PROVIDED', 'No refresh token provided', 'ERROR_NO_REFRESH_TOKEN_PROVIDED', HttpStatus.UNAUTHORIZED);
     const { accessToken } = await this.authService.refreshToken(refreshToken);
     return { success: true, data: { accessToken }, messageKey: 'SUCCESS_TOKEN_REFRESHED' };
   }
@@ -68,9 +69,10 @@ export class AuthController {
     return { success: true, data: {}, messageKey: 'SUCCESS_PASSWORD_RESET' };
   }
 
+  @UseGuards(AuthGuard)
   @Post('send-verify-email')
-  async sendVerifyEmail(@Body('email') email: string) {
-    await this.authService.sendVerifyEmail(email);
+  async sendVerifyEmail(@CurrentUser('sub') userId: string) {
+    await this.authService.sendVerifyEmail(userId);
     return { success: true, data: {}, messageKey: 'SUCCESS_VERIFY_EMAIL_SENT' };
   }
 

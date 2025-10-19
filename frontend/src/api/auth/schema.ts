@@ -71,8 +71,8 @@ export type SendPasswordResetEmailRequest = z.infer<typeof SendPasswordResetEmai
 //=== Reset Password
 //===----------------------------------------------------------------------===//
 export const ResetPasswordRequestSchema = z.object({
-  resetPasswordToken: z.string(),
-  newPassword: z.string(),
+  token: z.string(),
+  password: z.string(),
 });
 export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>;
 
@@ -81,10 +81,8 @@ export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>;
 //===----------------------------------------------------------------------===//
 //=== Send Verify Email
 //===----------------------------------------------------------------------===//
-export const SendVerifyEmailRequestSchema = z.object({
-  email: z.string(),
-});
-export type SendVerifyEmailRequest = z.infer<typeof SendVerifyEmailRequestSchema>;
+
+// No request type needed for send verify email
 
 // No response needed for send verify email
 

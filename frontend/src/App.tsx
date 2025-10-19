@@ -2,7 +2,7 @@ import { Routes, Navigate } from "react-router";
 import { BrowserRouter, Route } from "react-router-dom";
 import { Dashboard } from "./pages/dashboard";
 import { Toaster } from "sonner";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider, useAuth, useUser } from "./contexts/AuthContext";
 import { Spinner } from "./components/ui/spinner";
 import { AuthLayout } from "./pages/auth/layout";
 import { Signin } from "./pages/auth/sign-in";
@@ -11,10 +11,9 @@ import { ForgotPassword } from "./pages/auth/forgot-password";
 import { SendVerifyEmail } from "./pages/auth/send-verify-email";
 import { ResetPassword } from "./pages/auth/reset-password";
 import { VerifyEmail } from "./pages/auth/verify-email";
-import { useCurrentUser } from "./hooks/useUserProfile";
 
 function EmailVerificationGuard({ children }: { children: React.ReactNode }) {
-  const { data: user, isLoading } = useCurrentUser();
+  const { user, isLoading } = useUser();
 
   if (isLoading) {
     return (
@@ -24,7 +23,7 @@ function EmailVerificationGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (user?.success && user.data && !user.data.isEmailVerified) {
+  if (user?.success && !user.data?.isEmailVerified) {
     return <Navigate to="/auth/send-verify-email" replace />;
   }
 

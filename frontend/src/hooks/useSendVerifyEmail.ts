@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api/auth/auth';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
+import type { EmptyErrorResponse, EmptyResponse } from '@/api/schema';
+import { getToastMessage } from '@/lib/messageMap';
 
 export function useSendVerifyEmail() {
   const queryClient = useQueryClient();
@@ -10,19 +12,17 @@ export function useSendVerifyEmail() {
 
   const sendVerifyEmailMutation = useMutation({
     mutationFn: authApi.sendVerifyEmail,
-    onSuccess: () => {
-      toast.success("Verification email sent");
+    onSuccess: (response: EmptyResponse) => {
       setIsSentButtonDisabled(true);
       setTimeLeft(60);
-      // Invalidate user query to refresh email verification status
       queryClient.invalidateQueries({ queryKey: ["user"] });
+      toast.success(getToastMessage(response.messageKey));
     },
-    onError: (error) => {
-      toast.error(`Failed to send verification email: ${error.message}`);
+    onError: (response: EmptyErrorResponse) => {
+      toast.error(getToastMessage(response.messageKey));
     },
   });
 
-  // Timer effect for resend cooldown
   useEffect(() => {
     if (isSentButtonDisabled && timeLeft > 0) {
       const interval = setInterval(() => {
@@ -38,8 +38,8 @@ export function useSendVerifyEmail() {
     }
   }, [isSentButtonDisabled, timeLeft]);
 
-  const sendVerifyEmail = (email: string) => {
-    sendVerifyEmailMutation.mutate({ email });
+  const sendVerifyEmail = () => {
+    sendVerifyEmailMutation.mutate();
   };
 
   return {

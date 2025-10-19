@@ -12,7 +12,8 @@ export class UserController {
   @UseGuards(AuthGuard)
   async getCurrentUser(@CurrentUser('sub') userId: string) {
     const user = await this.userService.findById(userId);
-    if (!user) throw new BadRequestException(new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.BAD_REQUEST));
-    return { success: true, data: user, messageKey: 'SUCCESS_GET_CURRENT_USER' };
+    if (!user) throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.BAD_REQUEST);
+    const response = { success: true, data: user, messageKey: 'SUCCESS_GET_CURRENT_USER' };
+    return response;
   }
 }

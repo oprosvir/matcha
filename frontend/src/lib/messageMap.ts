@@ -13,7 +13,8 @@ export const messageMap: Record<string, string> = {
   "ERROR_INVALID_PASSWORD": "Password is not strong enough. Please use a stronger one",
   "ERROR_EMAIL_OR_USERNAME_ALREADY_EXISTS": "Email or username already exists. Please use a different one",
   "ERROR_INVALID_CREDENTIALS": "Your username or password is incorrect. Please try again",
-  "ERROR_EMAIL_ALREADY_VERIFIED": "Email already verified. Please sign in"
+  "ERROR_EMAIL_ALREADY_VERIFIED": "Email already verified. Please sign in",
+  "ERROR_INVALID_OR_EXPIRED_RESET_TOKEN": "Invalid or expired reset password link. Please request a new one.",
 }
 
 export const getToastMessage = (key: string) => {

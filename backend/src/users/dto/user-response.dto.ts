@@ -12,12 +12,12 @@ enum SexualOrientation {
 export class PublicUserResponseDto {
   firstName: string;
   lastName: string;
-  gender: Gender;
-  biography: string;
+  gender: Gender | null;
+  biography: string | null;
   fameRating: number;
-  latitude: number;
-  longitude: number;
-  lastTimeActive: Date;
+  latitude: number | null;
+  longitude: number | null;
+  lastTimeActive: Date | null;
   createdAt: Date;
 }
 
@@ -26,5 +26,5 @@ export class PrivateUserResponseDto extends PublicUserResponseDto {
   email: string;
   username: string;
   isEmailVerified: boolean;
-  sexualOrientation: SexualOrientation;
+  sexualOrientation: SexualOrientation | null;
 }

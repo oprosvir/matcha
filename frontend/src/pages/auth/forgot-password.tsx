@@ -6,45 +6,41 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { type FormEvent, useState, useEffect } from "react";
-import { authApi } from "@/api/auth/auth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useForgotPassword } from "@/hooks/useForgotPassword";
+
+const schema = z.object({
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Invalid email address"),
+});
+
+type FormData = z.infer<typeof schema>;
 
 export function ForgotPassword() {
-  const [email, setEmail] = useState("");
-  const [isSentButtonDisabled, setIsSentButtonDisabled] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const { sendPasswordResetEmail, isPending, isSentButtonDisabled, timeLeft } =
+    useForgotPassword();
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-      await authApi.sendPasswordResetEmail({ email });
-      toast.success(
-        `Thanks! We've sent a link to ${email} if an account exists.`
-      );
-      setIsSentButtonDisabled(true);
-      setTimeLeft(60);
-    } catch (err) {
-      toast.error("Failed to send reset link. Please try again.");
-    }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  const onSubmit = (data: FormData) => {
+    sendPasswordResetEmail({ email: data.email });
   };
-  useEffect(() => {
-    if (isSentButtonDisabled && timeLeft > 0) {
-      const interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setIsSentButtonDisabled(false);
-            return 60;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [isSentButtonDisabled, timeLeft]);
 
   return (
-    <form className="p-6 md:p-8" onSubmit={handleSubmit}>
+    <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-2xl font-bold">Reset your password</h1>
@@ -59,14 +55,20 @@ export function ForgotPassword() {
             id="email"
             type="email"
             placeholder="m@example.com"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            {...register("email")}
           />
+          {errors.email && (
+            <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
+          )}
         </Field>
         <Field>
-          <Button type="submit" disabled={isSentButtonDisabled}>
-            {isSentButtonDisabled
+          <Button
+            type="submit"
+            disabled={isSentButtonDisabled || isPending || isSubmitting}
+          >
+            {isPending || isSubmitting
+              ? "Sending..."
+              : isSentButtonDisabled
               ? `Resend in ${timeLeft}s`
               : "Send Reset Link"}
           </Button>

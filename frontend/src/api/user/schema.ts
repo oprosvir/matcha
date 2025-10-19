@@ -8,16 +8,16 @@ import { createApiResponseSchema } from "../schema";
 // No request schema needed for get own user profile
 
 export const GetOwnProfileResponseSchema = createApiResponseSchema(z.object({
-  id: z.string(),
+  id: z.number(),
   username: z.string(),
   firstName: z.string(),
   lastName: z.string(),
-  gender: z.enum(['male', 'female']),
-  sexualOrientation: z.enum(['straight', 'gay', 'bisexual']),
-  biography: z.string(),
+  gender: z.enum(['male', 'female']).nullable(),
+  sexualOrientation: z.enum(['straight', 'gay', 'bisexual']).nullable(),
+  biography: z.string().nullable(),
   fameRating: z.number(),
-  latitude: z.number(),
-  longitude: z.number(),
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
   email: z.string(),
   isEmailVerified: z.boolean(),
 }));
