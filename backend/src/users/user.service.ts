@@ -1,6 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersRepository } from './repositories/users.repository';
 import { PublicUserResponseDto, PrivateUserResponseDto } from './dto/user-response.dto';
 import { User } from './repositories/users.repository';
@@ -92,5 +93,16 @@ export class UserService {
 
   async updateEmailVerified(userId: string, isEmailVerified: boolean): Promise<void> {
     await this.usersRepository.updateEmailVerified(userId, isEmailVerified);
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<PrivateUserResponseDto> {
+    const user: User = await this.usersRepository.updateProfile(userId, {
+      firstName: updateProfileDto.firstName,
+      lastName: updateProfileDto.lastName,
+      gender: updateProfileDto.gender,
+      sexualOrientation: updateProfileDto.sexualOrientation,
+      biography: updateProfileDto.biography,
+    });
+    return this.mapUserToPrivateUserResponseDto(user);
   }
 }

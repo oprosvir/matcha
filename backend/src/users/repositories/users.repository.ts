@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { CustomHttpException } from '../../common/exceptions/custom-http.exception';
 
 enum Gender {
   MALE = 'male',
@@ -82,5 +83,63 @@ export class UsersRepository {
   async updateEmailVerified(userId: string, isEmailVerified: boolean): Promise<void> {
     const query = 'UPDATE users SET is_email_verified = $1 WHERE id = $2';
     await this.db.query(query, [isEmailVerified, userId]);
+  }
+
+  async updateProfile(userId: string, updates: Partial<{
+    firstName: string;
+    lastName: string;
+    gender: Gender;
+    sexualOrientation: SexualOrientation;
+    biography: string;
+  }>): Promise<User> {
+    const fields: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (updates.firstName !== undefined) {
+      fields.push(`first_name = $${paramIndex++}`);
+      values.push(updates.firstName);
+    }
+    if (updates.lastName !== undefined) {
+      fields.push(`last_name = $${paramIndex++}`);
+      values.push(updates.lastName);
+    }
+    if (updates.gender !== undefined) {
+      fields.push(`gender = $${paramIndex++}`);
+      values.push(updates.gender);
+    }
+    if (updates.sexualOrientation !== undefined) {
+      fields.push(`sexual_orientation = $${paramIndex++}`);
+      values.push(updates.sexualOrientation);
+    }
+    if (updates.biography !== undefined) {
+      fields.push(`biography = $${paramIndex++}`);
+      values.push(updates.biography);
+    }
+
+    if (fields.length === 0) {
+      // No updates provided, return current user
+      const user = await this.findById(userId);
+      if (!user) {
+        throw new CustomHttpException(
+          'USER_NOT_FOUND',
+          `User with id ${userId} not found`,
+          'ERROR_USER_NOT_FOUND',
+          HttpStatus.NOT_FOUND
+        );
+      }
+      return user;
+    }
+
+    values.push(userId);
+    const query = `
+      UPDATE users
+      SET ${fields.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `;
+
+    const result = await this.db.query<User>(query, values);
+    return result.rows[0];
   }
 }
