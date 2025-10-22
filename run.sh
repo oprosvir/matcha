@@ -38,10 +38,16 @@ case $COMMAND in
     ;;
   
   restart)
-    echo -e "${YELLOW}🔄 Restarting Matcha services...${NC}"
+    echo -e "${YELLOW}🔄 Restarting Matcha services with rebuild...${NC}"
     docker compose down
+    docker compose build --no-cache
     docker compose up -d
-    echo -e "${GREEN}✅ Services restarted${NC}"
+    echo -e "${GREEN}✅ Services restarted with fresh build${NC}"
+    echo ""
+    echo -e "Frontend: ${BLUE}http://localhost:5173${NC}"
+    echo -e "Backend:  ${BLUE}http://localhost:3000${NC}"
+    echo -e "Database: ${BLUE}http://localhost:5432${NC}"
+    echo -e "Redis:    ${BLUE}http://localhost:6379${NC}"
     ;;
   
   logs)

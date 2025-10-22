@@ -20,8 +20,10 @@ export class UserService {
       fameRating: user.fame_rating,
       latitude: user.latitude,
       longitude: user.longitude,
-      lastTimeActive: user.last_time_active,
-      createdAt: user.created_at,
+      lastTimeActive: user.last_time_active?.toISOString() || null,
+      createdAt: user.created_at.toISOString(),
+      interests: user.interests,
+      photos: user.photos,
     };
   }
 
@@ -36,11 +38,13 @@ export class UserService {
       fameRating: user.fame_rating,
       latitude: user.latitude,
       longitude: user.longitude,
-      lastTimeActive: user.last_time_active,
-      createdAt: user.created_at,
+      lastTimeActive: user.last_time_active?.toISOString() || null,
+      createdAt: user.created_at.toISOString(),
       email: user.email,
       username: user.username,
       isEmailVerified: user.is_email_verified,
+      interests: user.interests,
+      photos: user.photos,
     };
   }
 

@@ -9,6 +9,17 @@ enum SexualOrientation {
   BISEXUAL = 'bisexual',
 }
 
+export interface UserPhoto {
+  id: string;
+  url: string;
+  is_main: boolean;
+}
+
+export interface UserInterest {
+  id: string;
+  name: string;
+}
+
 export class PublicUserResponseDto {
   firstName: string;
   lastName: string;
@@ -17,8 +28,10 @@ export class PublicUserResponseDto {
   fameRating: number;
   latitude: number | null;
   longitude: number | null;
-  lastTimeActive: Date | null;
-  createdAt: Date;
+  lastTimeActive: string | null;
+  createdAt: string;
+  photos: UserPhoto[];
+  interests: UserInterest[];
 }
 
 export class PrivateUserResponseDto extends PublicUserResponseDto {
