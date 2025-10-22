@@ -1,8 +1,19 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import { CreateUserDto } from '../dto/create-user.dto';
-import { CustomHttpException } from '../../common/exceptions/custom-http.exception';
+import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import { Gender, SexualOrientation } from '../enums/user.enums';
+
+export interface UserPhoto {
+  id: string;
+  url: string;
+  is_main: boolean;
+}
+
+export interface UserInterest {
+  id: string;
+  name: string;
+}
 
 export interface User {
   id: string;
@@ -21,58 +32,130 @@ export interface User {
   password_hash: string;
   created_at: Date;
   updated_at: Date;
+  photos: UserPhoto[];
+  interests: UserInterest[];
 }
+
+const USER_BASE_QUERY = `
+  SELECT 
+    u.id,
+    u.username,
+    u.email,
+    u.is_email_verified,
+    u.password_hash,
+    u.first_name,
+    u.last_name,
+    u.gender,
+    u.sexual_orientation,
+    u.biography,
+    u.fame_rating,
+    u.latitude,
+    u.longitude,
+    u.last_time_active,
+    u.created_at,
+    u.updated_at,
+    COALESCE(
+      jsonb_agg(DISTINCT jsonb_build_object(
+        'id', up.id,
+        'url', up.url,
+        'is_profile_pic', up.is_profile_pic
+      )) FILTER (WHERE up.id IS NOT NULL),
+      '[]'::jsonb
+    ) AS photos,
+    COALESCE(
+      jsonb_agg(DISTINCT jsonb_build_object(
+        'id', i.id,
+        'name', i.name
+      )) FILTER (WHERE i.id IS NOT NULL),
+      '[]'::jsonb
+    ) AS interests
+  FROM users u
+  LEFT JOIN user_photos up ON u.id = up.user_id
+  LEFT JOIN user_interests ui ON u.id = ui.user_id
+  LEFT JOIN interests i ON ui.interest_id = i.id
+`;
 
 @Injectable()
 export class UsersRepository {
   constructor(private readonly db: DatabaseService) { }
 
   async findById(id: string): Promise<User | null> {
-    const query = 'SELECT * FROM users WHERE id = $1';
-    const result = await this.db.query<User>(query, [id]);
-    return result.rows[0] || null;
+    try {
+      const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.id = $1 GROUP BY u.id`, [id]);
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    const query = 'SELECT * FROM users WHERE username = $1';
-    const result = await this.db.query<User>(query, [username]);
-    return result.rows[0] || null;
+    try {
+      const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.username = $1 GROUP BY u.id`, [username]);
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const query = 'SELECT * FROM users WHERE email = $1';
-    const result = await this.db.query<User>(query, [email]);
-    return result.rows[0] || null;
+    try {
+      const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.email = $1 GROUP BY u.id`, [email]);
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async findByEmailOrUsername(email: string, username: string): Promise<User | null> {
-    const query = 'SELECT * FROM users WHERE email = $1 OR username = $2';
-    const result = await this.db.query<User>(query, [email, username]);
-    return result.rows[0] || null;
+    try {
+      const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.email = $1 OR u.username = $2 GROUP BY u.id`, [email, username]);
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const { email, password, firstName, lastName, username } = createUserDto;
 
-    const query = `
+    try {
+      const query = `
       INSERT INTO users(email, password_hash, first_name, last_name, username) 
       VALUES ($1, $2, $3, $4, $5) 
       RETURNING *`;
 
-    const params = [email, password, firstName, lastName, username];
-    const result = await this.db.query<User>(query, params);
+      const params = [email, password, firstName, lastName, username];
+      const result = await this.db.query<User>(query, params);
 
-    return result.rows[0];
+      return result.rows[0];
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async updatePassword(userId: string, passwordHash: string): Promise<void> {
-    const query = 'UPDATE users SET password_hash = $1 WHERE id = $2';
-    await this.db.query(query, [passwordHash, userId]);
+    try {
+      const query = 'UPDATE users SET password_hash = $1 WHERE id = $2';
+      await this.db.query(query, [passwordHash, userId]);
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async updateEmailVerified(userId: string, isEmailVerified: boolean): Promise<void> {
-    const query = 'UPDATE users SET is_email_verified = $1 WHERE id = $2';
-    await this.db.query(query, [isEmailVerified, userId]);
+    try {
+      const query = 'UPDATE users SET is_email_verified = $1 WHERE id = $2';
+      await this.db.query(query, [isEmailVerified, userId]);
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async updateProfile(userId: string, updates: Partial<{

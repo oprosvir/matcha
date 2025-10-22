@@ -120,19 +120,23 @@ export class AuthService {
     return;
   }
 
-  // TODO: Don't return an error if the email is not found to prevent email enumeration
   async sendVerifyEmail(userId: string): Promise<void> {
     const user = await this.userService.findById(userId);
     if (!user) throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.BAD_REQUEST);
     if (user.isEmailVerified) throw new CustomHttpException('EMAIL_ALREADY_VERIFIED', 'Email already verified', 'ERROR_EMAIL_ALREADY_VERIFIED', HttpStatus.BAD_REQUEST);
     const verifyEmailToken = crypto.randomBytes(32).toString('hex');
     await this.authRepository.setEntry(`verify_email:${verifyEmailToken}`, user.id.toString(), 60 * 60);
-    this.resend.emails.send({
-      from: 'onboarding@resend.dev',
-      to: user.email,
-      subject: 'Verify your email for Matcha',
-      html: `<p>Click <a href="http://localhost:5173/auth/verify-email?token=${verifyEmailToken}">here</a> to verify your email.</p>`
-    });
+    try {
+      const response = await this.resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: user.email,
+        subject: 'Verify your email for Matcha',
+        html: `<p>Click <a href="http://localhost:5173/auth/verify-email?token=${verifyEmailToken}">here</a> to verify your email.</p>`
+      });
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred please try again later', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
     return;
   }
 }

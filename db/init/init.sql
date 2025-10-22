@@ -142,6 +142,45 @@ BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE PROCEDURE update_timestamp();
 
+INSERT INTO
+  interests (name)
+VALUES
+  ('#Travel'),
+  ('#Music'),
+  ('#Gym'),
+  ('#Coffee'),
+  ('#Films'),
+  ('#Walking'),
+  ('#Netflix'),
+  ('#Shopping'),
+  ('#Outdoors'),
+  ('#Football'),
+  ('#Sports'),
+  ('#WorkingOut'),
+  ('#Cooking'),
+  ('#Yoga'),
+  ('#Hiking'),
+  ('#Photography'),
+  ('#Reading'),
+  ('#Dancing'),
+  ('#Meditation'),
+  ('#Gaming'),
+  ('#Art'),
+  ('#Biking'),
+  ('#Beach'),
+  ('#Surfing'),
+  ('#Volunteering'),
+  ('#Technology'),
+  ('#Entrepreneurship'),
+  ('#Animals'),
+  ('#Fashion'),
+  ('#Movies'),
+  ('#Crafts'),
+  ('#TravelBlogging'),
+  ('#Running'),
+  ('#Kayaking'),
+  ('#ComedyShows');
+
 CREATE INDEX idx_users_lat_lng ON users(latitude, longitude);
 CREATE INDEX idx_user_interests_interest_id ON user_interests(interest_id);
 CREATE INDEX idx_profile_views_viewed_id ON profile_views(viewed_id);

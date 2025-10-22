@@ -14,8 +14,7 @@ export class UserController {
   async getCurrentUser(@CurrentUser('sub') userId: string) {
     const user = await this.userService.findById(userId);
     if (!user) throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.BAD_REQUEST);
-    const response = { success: true, data: user, messageKey: 'SUCCESS_GET_CURRENT_USER' };
-    return response;
+    return { success: true, data: user, messageKey: 'SUCCESS_GET_CURRENT_USER' };
   }
 
   @Put('me')
