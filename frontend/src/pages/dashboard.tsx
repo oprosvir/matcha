@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ErrorFallback } from "@/components/ErrorFallback";
-import { User as UserIcon, Search, Heart } from "lucide-react";
+import { User as UserIcon, Search, Heart, MessageCircle, MapPin } from "lucide-react";
 
 function UserHasCompletedProfile(user: User): boolean {
   // TODO: Add photos and interests check when backend endpoints are ready
@@ -42,31 +42,79 @@ export function Dashboard() {
   }
 
   // Profile completed - show dashboard with AppLayout
+  // TODO: make user photo not optional
   if (user && UserHasCompletedProfile(user)) {
+    const profilePic = user.photos?.find((p) => p.is_profile_pic);
+
     return (
       <AppLayout>
         <div className="max-w-5xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">
-            Welcome back, {user.firstName}! 👋
+            Welcome back, {user.firstName}!
           </h1>
-          <p className="text-muted-foreground mb-8">
-            Complete your profile to start matching with people
+          <p className="text-muted-foreground mb-6">
+            Ready to find your perfect match?
           </p>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card>
-              <CardContent className="pt-6">
-                <UserIcon className="w-10 h-10 mb-3 text-primary" />
-                <h3 className="font-semibold mb-2">Complete Your Profile</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Add your photos, interests, and bio to attract matches
-                </p>
-                <Button asChild className="w-full">
-                  <Link to="/profile">Go to Profile</Link>
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Profile Hero Card */}
+          <Card className="mb-6">
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Avatar */}
+                <div className="flex-shrink-0">
+                  {profilePic ? (
+                    <img
+                      src={profilePic.url}
+                      alt={`${user.firstName}'s profile`}
+                      className="w-32 h-32 rounded-full object-cover border-2 border-border"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-2 border-border">
+                      <UserIcon className="w-16 h-16 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
 
+                {/* User Info */}
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold">
+                    {user.firstName} {user.lastName}
+                  </h2>
+                  <p className="text-muted-foreground text-sm mb-3">
+                    @{user.username}
+                  </p>
+
+                  {user.biography && (
+                    <p className="text-sm mb-4 line-clamp-2">
+                      {user.biography}
+                    </p>
+                  )}
+
+                  {/* Location */}
+                  {/* TODO: replace with actual location display when available */}
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="w-4 h-4" />
+                    {user.latitude && user.longitude ? (
+                      <span>Location set</span>
+                    ) : (
+                      <span className="text-muted-foreground">Location not set</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex md:flex-col gap-2">
+                  <Button variant="outline" asChild className="md:w-auto">
+                    <Link to="/profile">Edit Profile</Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions Grid */}
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Browse Profiles */}
             <Card className="opacity-60">
               <CardContent className="pt-6">
                 <Search className="w-10 h-10 mb-3 text-muted-foreground" />
@@ -80,6 +128,7 @@ export function Dashboard() {
               </CardContent>
             </Card>
 
+            {/* Your Matches */}
             <Card className="opacity-60">
               <CardContent className="pt-6">
                 <Heart className="w-10 h-10 mb-3 text-muted-foreground" />
@@ -92,48 +141,21 @@ export function Dashboard() {
                 </Button>
               </CardContent>
             </Card>
-          </div>
 
-          <Card className="mt-6">
-            <CardContent className="pt-6">
-              <h3 className="font-semibold mb-4">Getting Started</h3>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                    1
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Complete your profile</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Add your gender, sexual orientation, and bio
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 opacity-50">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-bold">
-                    2
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Upload photos (Coming Soon)</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Add up to 5 photos to showcase yourself
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 opacity-50">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-bold">
-                    3
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Start browsing (Coming Soon)</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Find people who match your preferences
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Messages */}
+            <Card className="opacity-60">
+              <CardContent className="pt-6">
+                <MessageCircle className="w-10 h-10 mb-3 text-muted-foreground" />
+                <h3 className="font-semibold mb-2">Messages</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Chat with your matches and connections
+                </p>
+                <Button disabled className="w-full">
+                  Coming Soon
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </AppLayout>
     );

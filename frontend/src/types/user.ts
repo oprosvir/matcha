@@ -20,6 +20,7 @@ export interface Photo {
   is_profile_pic: boolean;
 }
 
+// TODO: make 'photos' and 'interests' required after backend is added
 export interface User {
   id: number;
   username: string;
@@ -35,8 +36,8 @@ export interface User {
   isEmailVerified: boolean;
   createdAt: Date;
   lastTimeActive: Date | null;
-  photos: Photo[];
-  interests: Interest[];
+  photos?: Photo[];
+  interests?: Interest[];
 }
 
 // Domain types for authentication
