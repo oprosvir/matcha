@@ -1,5 +1,5 @@
 import { useUser } from "@/contexts/AuthContext";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { ProfileForm } from "@/components/ProfileForm";
 import { AppLayout } from "@/components/layouts/AppLayout";
@@ -33,19 +33,24 @@ export function Profile() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">My Profile</h1>
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-3xl font-bold mb-2">Your Profile</h1>
+        <p className="text-muted-foreground mb-6">Keep your profile up to date</p>
 
         <Card>
+          <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+          </CardHeader>
           <CardContent>
-            <h2 className="text-xl font-semibold mb-4">Profile Information</h2>
             <ProfileForm user={user} />
           </CardContent>
         </Card>
 
         <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Account Details</CardTitle>
+          </CardHeader>
           <CardContent>
-            <h2 className="text-xl font-semibold mb-4">Account Details</h2>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Username:</span>
@@ -64,10 +69,6 @@ export function Profile() {
                 >
                   {user.data.isEmailVerified ? "✓ Verified" : "Not Verified"}
                 </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Fame Rating:</span>
-                <span className="font-medium">{user.data.fameRating}</span>
               </div>
             </div>
           </CardContent>

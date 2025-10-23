@@ -2,7 +2,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "./ui/button";
-import { Field } from "./ui/field";
+import { Field, FieldLabel } from "./ui/field";
+import { Input } from "./ui/input";
 import { useUpdateProfile } from "@/hooks/useUserProfile";
 import type { GetOwnProfileResponse } from "@/api/user/schema";
 
@@ -33,7 +34,7 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ user }: ProfileFormProps) {
-  const { updateProfile, isPending } = useUpdateProfile();
+  const { mutate: updateProfile, isPending } = useUpdateProfile();
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -59,9 +60,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <Field
-            label="First Name"
+        <Field>
+          <FieldLabel htmlFor="first-name">First Name</FieldLabel>
+          <Input
+            id="first-name"
             type="text"
             placeholder="John"
             {...form.register("firstName")}
@@ -71,11 +73,12 @@ export function ProfileForm({ user }: ProfileFormProps) {
               {form.formState.errors.firstName.message}
             </p>
           )}
-        </div>
+        </Field>
 
-        <div>
-          <Field
-            label="Last Name"
+        <Field>
+          <FieldLabel htmlFor="last-name">Last Name</FieldLabel>
+          <Input
+            id="last-name"
             type="text"
             placeholder="Doe"
             {...form.register("lastName")}
@@ -85,42 +88,44 @@ export function ProfileForm({ user }: ProfileFormProps) {
               {form.formState.errors.lastName.message}
             </p>
           )}
+        </Field>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="text-sm font-medium mb-2 block">Gender</label>
+          <select
+            {...form.register("gender")}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="">Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+          {form.formState.errors.gender && (
+            <p className="text-sm text-destructive mt-1">
+              {form.formState.errors.gender.message}
+            </p>
+          )}
         </div>
-      </div>
 
-      <div>
-        <label className="text-sm font-medium mb-2 block">Gender</label>
-        <select
-          {...form.register("gender")}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <option value="">Select gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
-        {form.formState.errors.gender && (
-          <p className="text-sm text-destructive mt-1">
-            {form.formState.errors.gender.message}
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label className="text-sm font-medium mb-2 block">Sexual Orientation</label>
-        <select
-          {...form.register("sexualOrientation")}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <option value="">Select orientation</option>
-          <option value="straight">Straight</option>
-          <option value="gay">Gay</option>
-          <option value="bisexual">Bisexual</option>
-        </select>
-        {form.formState.errors.sexualOrientation && (
-          <p className="text-sm text-destructive mt-1">
-            {form.formState.errors.sexualOrientation.message}
-          </p>
-        )}
+        <div>
+          <label className="text-sm font-medium mb-2 block">Sexual Orientation</label>
+          <select
+            {...form.register("sexualOrientation")}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="">Select orientation</option>
+            <option value="straight">Straight</option>
+            <option value="gay">Gay</option>
+            <option value="bisexual">Bisexual</option>
+          </select>
+          {form.formState.errors.sexualOrientation && (
+            <p className="text-sm text-destructive mt-1">
+              {form.formState.errors.sexualOrientation.message}
+            </p>
+          )}
+        </div>
       </div>
 
       <div>
