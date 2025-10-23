@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ErrorFallback } from "@/components/ErrorFallback";
+import { User as UserIcon, Search, Heart } from "lucide-react";
 
 function UserHasCompletedProfile(user: User): boolean {
   // TODO: Add photos and interests check when backend endpoints are ready
@@ -44,7 +45,7 @@ export function Dashboard() {
   if (user && UserHasCompletedProfile(user)) {
     return (
       <AppLayout>
-        <div className="container max-w-6xl mx-auto py-8 px-4">
+        <div className="max-w-5xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">
             Welcome back, {user.firstName}! 👋
           </h1>
@@ -55,7 +56,7 @@ export function Dashboard() {
           <div className="grid gap-6 md:grid-cols-3">
             <Card>
               <CardContent className="pt-6">
-                <div className="text-4xl mb-3">👤</div>
+                <UserIcon className="w-10 h-10 mb-3 text-primary" />
                 <h3 className="font-semibold mb-2">Complete Your Profile</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Add your photos, interests, and bio to attract matches
@@ -68,7 +69,7 @@ export function Dashboard() {
 
             <Card className="opacity-60">
               <CardContent className="pt-6">
-                <div className="text-4xl mb-3">🔍</div>
+                <Search className="w-10 h-10 mb-3 text-muted-foreground" />
                 <h3 className="font-semibold mb-2">Browse Profiles</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Discover people near you with similar interests
@@ -81,7 +82,7 @@ export function Dashboard() {
 
             <Card className="opacity-60">
               <CardContent className="pt-6">
-                <div className="text-4xl mb-3">💘</div>
+                <Heart className="w-10 h-10 mb-3 text-muted-foreground" />
                 <h3 className="font-semibold mb-2">Your Matches</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   See who liked you and start chatting
