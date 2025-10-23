@@ -58,7 +58,7 @@ export function Dashboard() {
 
           {/* Profile Hero Card */}
           <Card className="mb-6">
-            <CardContent className="pt-6">
+            <CardContent>
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Avatar */}
                 <div className="flex-shrink-0">
@@ -116,13 +116,13 @@ export function Dashboard() {
           <div className="grid gap-6 md:grid-cols-3">
             {/* Browse Profiles */}
             <Card className="opacity-60">
-              <CardContent className="pt-6">
+              <CardContent className="flex flex-col h-full">
                 <Search className="w-10 h-10 mb-3 text-muted-foreground" />
                 <h3 className="font-semibold mb-2">Browse Profiles</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Discover people near you with similar interests
                 </p>
-                <Button disabled className="w-full">
+                <Button disabled className="w-full mt-auto">
                   Coming Soon
                 </Button>
               </CardContent>
@@ -130,13 +130,13 @@ export function Dashboard() {
 
             {/* Your Matches */}
             <Card className="opacity-60">
-              <CardContent className="pt-6">
+              <CardContent className="flex flex-col h-full">
                 <Heart className="w-10 h-10 mb-3 text-muted-foreground" />
                 <h3 className="font-semibold mb-2">Your Matches</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   See who liked you and start chatting
                 </p>
-                <Button disabled className="w-full">
+                <Button disabled className="w-full mt-auto">
                   Coming Soon
                 </Button>
               </CardContent>
@@ -144,13 +144,13 @@ export function Dashboard() {
 
             {/* Messages */}
             <Card className="opacity-60">
-              <CardContent className="pt-6">
+              <CardContent className="flex flex-col h-full">
                 <MessageCircle className="w-10 h-10 mb-3 text-muted-foreground" />
                 <h3 className="font-semibold mb-2">Messages</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Chat with your matches and connections
                 </p>
-                <Button disabled className="w-full">
+                <Button disabled className="w-full mt-auto">
                   Coming Soon
                 </Button>
               </CardContent>
