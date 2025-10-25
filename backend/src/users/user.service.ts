@@ -7,14 +7,17 @@ import { PublicUserResponseDto, PrivateUserResponseDto } from './dto/user-respon
 import { User } from './repositories/users.repository';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import { LikesRepository } from './repositories/likes.repository';
+import { LikeSent, LikeReceived } from './repositories/likes.repository';
+import { ChatRepository } from 'src/chat/repositories/chat.repository';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly usersRepository: UsersRepository, private readonly likesRepository: LikesRepository) { }
+  constructor(private readonly usersRepository: UsersRepository, private readonly likesRepository: LikesRepository, private readonly chatRepository: ChatRepository) { }
 
   private mapUserToPublicUserResponseDto(user: User): PublicUserResponseDto | null {
     if (!user) return null;
     return {
+      id: user.id,
       firstName: user.first_name,
       lastName: user.last_name,
       gender: user.gender,
@@ -118,10 +121,12 @@ export class UserService {
   }
 
   async findAllMatches(userId: string): Promise<PublicUserResponseDto[]> {
-    const usersWhoUserLiked: string[] = await this.likesRepository.findAllUsersWhoUserLiked(userId);
-    const usersWhoLikedUser: string[] = await this.likesRepository.findAllUsersWhoLikedUserId(userId);
-    const usersWhoLikedUserSet = new Set(usersWhoLikedUser);
-    const matches = usersWhoUserLiked.filter(user => usersWhoLikedUserSet.has(user));
+    const usersWhoUserLiked: LikeSent[] = await this.likesRepository.findAllUsersWhoUserLiked(userId);
+    console.log("users I liked: ", usersWhoUserLiked);
+    const usersWhoLikedUser: LikeReceived[] = await this.likesRepository.findAllUsersWhoLikedUserId(userId);
+    console.log("users who liked me: ", usersWhoLikedUser);
+    const usersWhoLikedUserSet: Set<string> = new Set(usersWhoLikedUser.map(like => like.from_user_id));
+    const matches: string[] = usersWhoUserLiked.filter(like => usersWhoLikedUserSet.has(like.to_user_id)).map(like => like.to_user_id);
     const matchesPublic: PublicUserResponseDto[] = [];
     for (const match of matches) {
       const user = await this.findPublicProfileById(match);
@@ -129,6 +134,33 @@ export class UserService {
         matchesPublic.push(user);
       }
     }
+    console.log("matches: ", matchesPublic);
     return matchesPublic;
   }
+
+  async hasUserLikedUser(fromUserId: string, toUserId: string): Promise<boolean> {
+    const like = await this.likesRepository.findByFromUserIdAndToUserId(fromUserId, toUserId);
+    return like !== null;
+  }
+
+  async likeUser(fromUserId: string, toUserId: string): Promise<void> {
+    if (fromUserId === toUserId) {
+      throw new CustomHttpException('SELF_LIKE_NOT_ALLOWED', 'You cannot like yourself.', 'ERROR_SELF_LIKE_NOT_ALLOWED', HttpStatus.BAD_REQUEST);
+    }
+    const like = await this.likesRepository.create(fromUserId, toUserId);
+    if (!like) {
+      throw new CustomHttpException('ALREADY_LIKED_USER', 'You have already liked this user.', 'ERROR_ALREADY_LIKED_USER', HttpStatus.CONFLICT);
+    }
+    const hasUserLikedUser = await this.hasUserLikedUser(toUserId, fromUserId);
+    // Match found!
+    // - Create chat
+    // - Send notification to both users
+    // - Increase fame rating of both users
+    if (hasUserLikedUser) {
+      await this.chatRepository.createChat(fromUserId, toUserId);
+      // TODO: Send notification to both users
+      // TODO: Increase fame rating of both users
+    }
+  }
 }
+

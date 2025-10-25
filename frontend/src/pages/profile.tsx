@@ -3,15 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { ProfileForm } from "@/components/ProfileForm";
 import { AppLayout } from "@/components/layouts/AppLayout";
-import { useAllMatches } from "@/hooks/useAllMatches";
 
 export function Profile() {
   const { user, isLoading, isSuccess } = useUser();
-  const {
-    data: allMatches,
-    isLoading: isAllMatchesLoading,
-    isSuccess: isAllMatchesSuccess,
-  } = useAllMatches();
 
   if (isLoading) {
     return (

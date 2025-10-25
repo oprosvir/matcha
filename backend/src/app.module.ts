@@ -5,9 +5,11 @@ import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { InterestModule } from './interests/interest.module';
 import { ChatModule } from './chat/chat.module';
+import { NotificationModule } from './notifications/notification.module';
+import { EventModule } from './event/event.module';
 
 @Module({
-  imports: [AuthModule, DatabaseModule, InterestModule, ChatModule],
+  imports: [AuthModule, DatabaseModule, InterestModule, ChatModule, NotificationModule, EventModule],
   controllers: [AppController],
   providers: [AppService],
 })

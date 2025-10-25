@@ -11,6 +11,11 @@ services:
     volumes:
       - ./db/data:/var/lib/postgresql/data
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d matcha"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - matcha-network
 
@@ -42,10 +47,18 @@ services:
       - ./backend:/app
       - /app/node_modules
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     restart: always
-    command: npm run start:dev
+    command: sh -c "npm run seed && npm run start:dev"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - matcha-network
 
@@ -62,9 +75,14 @@ services:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     restart: always
-    command: npm run dev -- --host
+    command: npm run dev -- --host 
     networks:
       - matcha-network
 

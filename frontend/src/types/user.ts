@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const InterestSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   name: z.string(),
 });
 export type Interest = z.infer<typeof InterestSchema>;
@@ -15,7 +15,7 @@ export const SexualOrientationSchema = z.enum(['straight', 'gay', 'bisexual']);
 export type SexualOrientation = z.infer<typeof SexualOrientationSchema>;
 
 export const PhotoSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   url: z.string(),
   is_profile_pic: z.boolean(),
 });
@@ -25,7 +25,7 @@ export const PhotosSchema = z.array(PhotoSchema);
 export type Photos = z.infer<typeof PhotosSchema>;
 
 export const UserSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   username: z.string(),
   firstName: z.string(),
   lastName: z.string(),
@@ -33,8 +33,8 @@ export const UserSchema = z.object({
   sexualOrientation: SexualOrientationSchema.nullable(),
   biography: z.string().nullable(),
   fameRating: z.number(),
-  latitude: z.number().nullable(),
-  longitude: z.number().nullable(),
+  latitude: z.string().nullable(),
+  longitude: z.string().nullable(),
   email: z.string(),
   isEmailVerified: z.boolean(),
   createdAt: z.string().transform((str) => new Date(str)),
@@ -45,13 +45,14 @@ export const UserSchema = z.object({
 export type User = z.infer<typeof UserSchema>;
 
 export const ProfileSchema = z.object({
+  id: z.string(),
   firstName: z.string(),
   lastName: z.string(),
   gender: GenderSchema.nullable(),
   biography: z.string().nullable(),
   fameRating: z.number(),
-  latitude: z.number().nullable(),
-  longitude: z.number().nullable(),
+  latitude: z.string().nullable(),
+  longitude: z.string().nullable(),
   lastTimeActive: z.string().nullable().transform((str) => str ? new Date(str) : null),
   createdAt: z.string().transform((str) => new Date(str)),
   photos: PhotosSchema,

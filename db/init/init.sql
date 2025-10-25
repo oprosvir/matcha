@@ -2,6 +2,8 @@
 -- Web Matcha Database Schema
 -- ==============================
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Create ENUM types
 CREATE TYPE gender_type AS ENUM ('male', 'female');
 CREATE TYPE sexual_orientation_type AS ENUM ('straight', 'gay', 'bisexual');
@@ -9,7 +11,7 @@ CREATE TYPE notification_type AS ENUM ('like', 'view', 'message', 'match', 'unli
 
 -- 1. Users Table
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     is_email_verified BOOLEAN DEFAULT FALSE,
@@ -29,8 +31,8 @@ CREATE TABLE users (
 
 -- 2. User Photos Table
 CREATE TABLE user_photos (
-    id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     url TEXT NOT NULL,
     is_profile_pic BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -38,45 +40,45 @@ CREATE TABLE user_photos (
 
 -- 3. Interests Table
 CREATE TABLE interests (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
 -- 4. User Interests Table (Many-to-Many)
 CREATE TABLE user_interests (
-    user_id INT REFERENCES users(id) ON DELETE CASCADE,
-    interest_id INT REFERENCES interests(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    interest_id UUID REFERENCES interests(id) ON DELETE CASCADE,
     PRIMARY KEY(user_id, interest_id)
 );
 
 -- 5. Likes Table
 CREATE TABLE likes (
-    id SERIAL PRIMARY KEY,
-    from_user_id INT REFERENCES users(id) ON DELETE CASCADE,
-    to_user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    from_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    to_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(from_user_id, to_user_id)
 );
 
 -- 6. Profile Views Table
 CREATE TABLE profile_views (
-    id SERIAL PRIMARY KEY,
-    viewer_id INT REFERENCES users(id) ON DELETE CASCADE,
-    viewed_id INT REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    viewer_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    viewed_id UUID REFERENCES users(id) ON DELETE CASCADE,
     viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 7. Blocks and Reports Tables
 CREATE TABLE blocks (
-    blocker_id INT REFERENCES users(id) ON DELETE CASCADE,
-    blocked_id INT REFERENCES users(id) ON DELETE CASCADE,
+    blocker_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    blocked_id UUID REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(blocker_id, blocked_id)
 );
 
 CREATE TABLE reports (
-    reporter_id INT REFERENCES users(id) ON DELETE CASCADE,
-    reported_id INT REFERENCES users(id) ON DELETE CASCADE,
+    reporter_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    reported_id UUID REFERENCES users(id) ON DELETE CASCADE,
     reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(reporter_id, reported_id)
@@ -84,17 +86,17 @@ CREATE TABLE reports (
 
 -- 8. Chat System
 CREATE TABLE chats (
-    id SERIAL PRIMARY KEY,
-    user1_id INT REFERENCES users(id) ON DELETE CASCADE,
-    user2_id INT REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user1_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user2_id UUID REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user1_id, user2_id)
 );
 
 CREATE TABLE messages (
-    id SERIAL PRIMARY KEY,
-    chat_id INT REFERENCES chats(id) ON DELETE CASCADE,
-    sender_id INT REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chat_id UUID REFERENCES chats(id) ON DELETE CASCADE,
+    sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_read BOOLEAN DEFAULT FALSE
@@ -102,22 +104,13 @@ CREATE TABLE messages (
 
 -- 9. Notifications Table
 CREATE TABLE notifications (
-    id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     type notification_type,
-    source_user_id INT REFERENCES users(id),
+    source_user_id UUID REFERENCES users(id),
     read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- 10. Fame Rating History Table (Optional)
-CREATE TABLE fame_history (
-    id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id) ON DELETE CASCADE,
-    rating INT,
-    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 
 -- Constraint 1: One profile picture per user
 CREATE UNIQUE INDEX one_profile_pic_per_user
@@ -141,45 +134,6 @@ CREATE TRIGGER update_users_updated_at
 BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE PROCEDURE update_timestamp();
-
-INSERT INTO
-  interests (name)
-VALUES
-  ('#Travel'),
-  ('#Music'),
-  ('#Gym'),
-  ('#Coffee'),
-  ('#Films'),
-  ('#Walking'),
-  ('#Netflix'),
-  ('#Shopping'),
-  ('#Outdoors'),
-  ('#Football'),
-  ('#Sports'),
-  ('#WorkingOut'),
-  ('#Cooking'),
-  ('#Yoga'),
-  ('#Hiking'),
-  ('#Photography'),
-  ('#Reading'),
-  ('#Dancing'),
-  ('#Meditation'),
-  ('#Gaming'),
-  ('#Art'),
-  ('#Biking'),
-  ('#Beach'),
-  ('#Surfing'),
-  ('#Volunteering'),
-  ('#Technology'),
-  ('#Entrepreneurship'),
-  ('#Animals'),
-  ('#Fashion'),
-  ('#Movies'),
-  ('#Crafts'),
-  ('#TravelBlogging'),
-  ('#Running'),
-  ('#Kayaking'),
-  ('#ComedyShows');
 
 CREATE INDEX idx_users_lat_lng ON users(latitude, longitude);
 CREATE INDEX idx_user_interests_interest_id ON user_interests(interest_id);

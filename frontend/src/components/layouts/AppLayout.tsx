@@ -39,7 +39,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen w-screen flex flex-col bg-background">
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-10">
         <div className="container max-w-7xl mx-auto px-4">
@@ -89,7 +89,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 p-6 md:pb-8">{children}</main>
+      <main className="p-6 flex-1 flex flex-col min-h-0">{children}</main>
 
       {/* Footer - Hidden on mobile due to bottom nav */}
       <footer className="hidden md:block border-t bg-card py-3 mt-auto">

@@ -12,6 +12,7 @@ export interface UserInterest {
 }
 
 export class PublicUserResponseDto {
+  id: string;
   firstName: string;
   lastName: string;
   gender: Gender | null;
@@ -26,7 +27,6 @@ export class PublicUserResponseDto {
 }
 
 export class PrivateUserResponseDto extends PublicUserResponseDto {
-  id: string;
   email: string;
   username: string;
   isEmailVerified: boolean;

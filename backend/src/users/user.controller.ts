@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, HttpStatus, Put, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpStatus, Post, Put, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { CurrentUser } from 'src/auth/current-user.decorator';
@@ -32,5 +32,12 @@ export class UserController {
   async findAllMatches(@CurrentUser('sub') userId: string) {
     const matches = await this.userService.findAllMatches(userId);
     return { success: true, data: matches, messageKey: 'SUCCESS_FIND_ALL_MATCHES' };
+  }
+
+  @Post('like')
+  @UseGuards(AuthGuard)
+  async likeUser(@CurrentUser('sub') userId: string, @Body() userLikedId: string) {
+    await this.userService.likeUser(userId, userLikedId);
+    return { success: true, messageKey: 'SUCCESS_LIKE_USER' };
   }
 }
