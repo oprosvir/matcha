@@ -1,14 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { SendMessageDto } from './dto/event.dto';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { MessagesService } from 'src/messages/message.service';
-import { Server } from 'socket.io';
 
 @Injectable()
 export class EventService {
-  constructor(private readonly messagesService: MessagesService) { }
+  constructor(
+    @Inject(forwardRef(() => MessagesService)) private readonly messagesService: MessagesService
+  ) { }
 
-  async handleSendMessageEvent(fromUserId: string, sendMessageDto: SendMessageDto, server: Server): Promise<void> {
-    await this.messagesService.createMessage(sendMessageDto.chatId, fromUserId, sendMessageDto.content);
-    server.to(sendMessageDto.toUserId).emit('receive_message', sendMessageDto);
+  async handleSendMessageEvent(chatId: string, fromUserId: string, content: string): Promise<void> {
+    await this.messagesService.createMessage(chatId, fromUserId, content);
   }
 }

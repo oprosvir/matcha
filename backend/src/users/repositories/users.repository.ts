@@ -3,6 +3,7 @@ import { DatabaseService } from '../../database/database.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import { Gender, SexualOrientation } from '../enums/user.enums';
+import { UserPreviewDto } from '../dto/user-preview.dto';
 
 export interface UserPhoto {
   id: string;
@@ -232,6 +233,34 @@ export class UsersRepository {
         );
       }
       return result.rows[0];
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async findAllPreviewByIds(ids: string[]): Promise<UserPreviewDto[]> {
+    try {
+      const result = await this.db.query<UserPreviewDto>(`
+        SELECT 
+          u.id,
+          u.first_name,
+          u.last_name,
+          COALESCE(
+            (SELECT url FROM user_photos WHERE user_id = u.id AND is_profile_pic = true LIMIT 1),
+            (SELECT url FROM user_photos WHERE user_id = u.id LIMIT 1),
+            ''
+          ) as profile_picture
+        FROM users u
+        WHERE u.id = ANY($1::uuid[])
+      `, [ids]);
+
+      return result.rows.map(row => ({
+        id: row.id,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        profilePicture: row.profile_picture,
+      }));
     } catch (error) {
       console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);

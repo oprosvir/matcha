@@ -60,6 +60,14 @@ export const ProfileSchema = z.object({
 });
 export type Profile = z.infer<typeof ProfileSchema>;
 
+export const ProfilePreviewSchema = z.object({
+  id: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  profilePicture: z.string(),
+});
+export type ProfilePreview = z.infer<typeof ProfilePreviewSchema>;
+
 export const MatchesSchema = z.array(ProfileSchema);
 export type Matches = z.infer<typeof MatchesSchema>;
 

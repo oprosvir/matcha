@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Get, HttpStatus, Post, Put, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { CurrentUser } from 'src/auth/current-user.decorator';
+import { CurrentUser } from 'src/auth/current-user.decorators';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 

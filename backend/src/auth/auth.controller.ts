@@ -4,7 +4,7 @@ import type { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { AuthGuard } from './auth.guard';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
-import { CurrentUser } from './current-user.decorator';
+import { CurrentUser } from './current-user.decorators';
 
 @Controller('auth')
 export class AuthController {

@@ -127,7 +127,7 @@ export class AuthService {
     const verifyEmailToken = crypto.randomBytes(32).toString('hex');
     await this.authRepository.setEntry(`verify_email:${verifyEmailToken}`, user.id.toString(), 60 * 60);
     try {
-      const response = await this.resend.emails.send({
+      await this.resend.emails.send({
         from: 'onboarding@resend.dev',
         to: user.email,
         subject: 'Verify your email for Matcha',

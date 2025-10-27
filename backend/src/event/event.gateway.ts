@@ -3,42 +3,57 @@ import {
   WebSocketServer,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
-import { UseGuards } from '@nestjs/common';
+import { OnModuleInit } from '@nestjs/common';
 import { Server } from 'socket.io';
-import { SendMessageDto } from './dto/event.dto';
-import { WsAuthGuard } from '../auth/ws-auth.guard';
-import { WsCurrentUser } from '../auth/ws-current-user.decorator';
 import { EventService } from './event.service';
 import { Socket } from 'socket.io';
+import { WebSocketEmitter } from './web-socket-emitter';
 
 @WebSocketGateway({
   cors: {
     origin: '*',
   },
 })
-@UseGuards(WsAuthGuard)
-export class EventGateway {
+export class EventGateway implements OnModuleInit {
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly eventService: EventService) { }
+  constructor(
+    private readonly eventService: EventService,
+    private readonly webSocketEmitter: WebSocketEmitter
+  ) { }
+
+  onModuleInit() {
+    this.webSocketEmitter.setServer(this.server);
+  }
 
   handleConnection(client: Socket) {
-    console.log(`Client connected : ${client.id}`);
-    console.log(`Authenticated user:`, client.data.user);
+    console.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected : ${client.id}`);
+    console.log(`Client disconnected: ${client.id}`);
   }
 
-  @SubscribeMessage('send_message')
-  async handleSendMessage(
-    @MessageBody() sendMessageDto: SendMessageDto,
-    @WsCurrentUser('sub') fromUserId: string,
+  @SubscribeMessage('joinChat')
+  handleJoinChat(@MessageBody() data: { chatId: string }, @ConnectedSocket() client: Socket) {
+    client.join(data.chatId);
+    console.log(`User ${client.id} joined chat ${data.chatId}`);
+  }
+
+  @SubscribeMessage('leaveChat')
+  handleLeaveChat(@MessageBody() data: { chatId: string }, @ConnectedSocket() client: Socket) {
+    client.leave(data.chatId);
+    console.log(`User ${client.id} left chat ${data.chatId}`);
+  }
+
+  @SubscribeMessage('sendMessage')
+  async handleMessage(
+    @MessageBody() data: { chatId: string; content: string; userId: string },
+    @ConnectedSocket() client: Socket
   ) {
-    console.log(`Message received : ${sendMessageDto.content} from user ${fromUserId} to ${sendMessageDto.toUserId}`);
-    await this.eventService.handleSendMessageEvent(fromUserId, sendMessageDto, this.server);
+    this.eventService.handleSendMessageEvent(data.chatId, data.userId, data.content);
   }
 }
