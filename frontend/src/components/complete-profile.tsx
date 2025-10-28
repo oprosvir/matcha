@@ -209,6 +209,10 @@ export function CompleteProfileForm({ user }: { user: User }) {
         currentInterests.filter((id) => id !== interestId)
       );
     } else {
+      // Limit to maximum 10 interests
+      if (currentInterests.length >= 10) {
+        return; // Don't allow selecting more than 10
+      }
       setValue("interests", [...currentInterests, interestId]);
     }
   };
@@ -339,40 +343,47 @@ export function CompleteProfileForm({ user }: { user: User }) {
               <FieldLabel>What are your interests?</FieldLabel>
               {isLoading && <Skeleton className="h-10 w-full" />}
               {isSuccess && (
-                <Tags className="max-w-full">
-                  <TagsTrigger>
-                    {getSelectedInterests().map((interest) => (
-                      <TagsValue
-                        key={interest.id}
-                        onRemove={() => handleInterestToggle(interest.id)}
-                      >
-                        {interest.name}
-                      </TagsValue>
-                    ))}
-                  </TagsTrigger>
-                  <TagsContent>
-                    <TagsInput placeholder="Search interest..." />
-                    <TagsList>
-                      <TagsEmpty />
-                      <TagsGroup>
-                        {interestsOptions
-                          ?.filter(
-                            (interest) =>
-                              !selectedInterests?.includes(interest.id)
-                          )
-                          .map((interest) => (
-                            <TagsItem
-                              key={interest.id}
-                              onSelect={() => handleInterestToggle(interest.id)}
-                              value={interest.id.toString()}
-                            >
-                              {interest.name}
-                            </TagsItem>
-                          ))}
-                      </TagsGroup>
-                    </TagsList>
-                  </TagsContent>
-                </Tags>
+                <>
+                  <Tags className="max-w-full">
+                    <TagsTrigger>
+                      {getSelectedInterests().map((interest) => (
+                        <TagsValue
+                          key={interest.id}
+                          onRemove={() => handleInterestToggle(interest.id)}
+                        >
+                          {interest.name}
+                        </TagsValue>
+                      ))}
+                    </TagsTrigger>
+                    <TagsContent>
+                      <TagsInput placeholder="Search interest..." />
+                      <TagsList>
+                        <TagsEmpty />
+                        <TagsGroup>
+                          {interestsOptions
+                            ?.filter(
+                              (interest) =>
+                                !selectedInterests?.includes(interest.id)
+                            )
+                            .map((interest) => (
+                              <TagsItem
+                                key={interest.id}
+                                onSelect={() => handleInterestToggle(interest.id)}
+                                value={interest.id.toString()}
+                                disabled={(selectedInterests?.length || 0) >= 10}
+                              >
+                                {interest.name}
+                              </TagsItem>
+                            ))}
+                        </TagsGroup>
+                      </TagsList>
+                    </TagsContent>
+                  </Tags>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {selectedInterests?.length || 0} / 10 interests selected
+                    {(selectedInterests?.length || 0) >= 10 && " (maximum reached)"}
+                  </p>
+                </>
               )}
               {errors.interests && (
                 <p className="text-sm text-red-500 mt-1">

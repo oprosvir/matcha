@@ -38,10 +38,15 @@ export function InterestsSelector({ currentInterests }: InterestsSelectorProps) 
 
     if (isSelected) {
       setSelectedIds(selectedIds.filter(id => id !== interestId));
+      setHasChanges(true);
     } else {
+      // Limit to maximum 10 interests
+      if (selectedIds.length >= 10) {
+        return; // Don't allow selecting more than 10
+      }
       setSelectedIds([...selectedIds, interestId]);
+      setHasChanges(true);
     }
-    setHasChanges(true);
   };
 
   const getSelectedInterests = () => {
@@ -74,6 +79,9 @@ export function InterestsSelector({ currentInterests }: InterestsSelectorProps) 
     );
   }
 
+  const maxInterests = 10;
+  const isMaxReached = selectedIds.length >= maxInterests;
+
   return (
     <div className="space-y-4">
       <Tags className="max-w-full">
@@ -102,6 +110,7 @@ export function InterestsSelector({ currentInterests }: InterestsSelectorProps) 
                     key={interest.id}
                     onSelect={() => handleInterestToggle(interest.id)}
                     value={interest.id.toString()}
+                    disabled={isMaxReached}
                   >
                     {interest.name}
                   </TagsItem>
@@ -110,6 +119,11 @@ export function InterestsSelector({ currentInterests }: InterestsSelectorProps) 
           </TagsList>
         </TagsContent>
       </Tags>
+
+      <p className="text-sm text-muted-foreground">
+        {selectedIds.length} / {maxInterests} interests selected
+        {isMaxReached && " (maximum reached)"}
+      </p>
 
       {hasChanges && (
         <div className="flex gap-2">

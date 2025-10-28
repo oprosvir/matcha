@@ -21,6 +21,7 @@ export const messageMap: Record<string, string> = {
   "ERROR_USER_NOT_FOUND": "User not found",
   "ERROR_NO_UPDATE_FIELDS": "No fields provided for update.",
   "ERROR_VALIDATION_FAILED": "The data you provided is invalid. Please check your inputs and try again.",
+  "ERROR_INVALID_INTEREST_IDS": "One or more interest IDs are invalid.",
   "ERROR_UNKNOWN": "An unknown error occurred. Please try again.",
 }
 

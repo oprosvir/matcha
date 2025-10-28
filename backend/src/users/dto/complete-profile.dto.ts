@@ -1,6 +1,7 @@
-import { IsString, MinLength, MaxLength, IsEnum, IsDateString, IsNotEmpty, IsArray, IsInt, ArrayMinSize } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsEnum, IsDateString, IsNotEmpty, IsArray, IsInt, ArrayMinSize, ArrayMaxSize } from 'class-validator';
 import { Gender, SexualOrientation } from '../enums/user.enums';
 import { IsMinAge } from '../validators/min-age.validator';
+import { IsArrayUnique } from 'src/common/validators/is-array-unique.validator';
 
 export class CompleteProfileDto {
   @IsDateString()
@@ -21,6 +22,8 @@ export class CompleteProfileDto {
 
   @IsArray()
   @ArrayMinSize(1, { message: 'At least one interest is required' })
+  @ArrayMaxSize(10, { message: 'Maximum 10 interests allowed' })
   @IsInt({ each: true })
+  @IsArrayUnique({ message: 'Interest IDs must be unique' })
   interestIds: number[];
 }
