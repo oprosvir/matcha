@@ -1,4 +1,4 @@
-import { IsString, MinLength, MaxLength, IsEnum, IsDateString, IsNotEmpty } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsEnum, IsDateString, IsNotEmpty, IsArray, IsInt, ArrayMinSize } from 'class-validator';
 import { Gender, SexualOrientation } from '../enums/user.enums';
 import { IsMinAge } from '../validators/min-age.validator';
 
@@ -18,4 +18,9 @@ export class CompleteProfileDto {
   @MinLength(5)
   @MaxLength(500)
   biography: string;
+
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one interest is required' })
+  @IsInt({ each: true })
+  interestIds: number[];
 }

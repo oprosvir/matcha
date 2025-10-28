@@ -19,6 +19,7 @@ interface CompleteProfileRequest {
   gender: Gender;
   sexualOrientation: SexualOrientation;
   biography: string;
+  interestIds: number[];
 }
 
 export const userApi = {

@@ -9,6 +9,7 @@ export const messageMap: Record<string, string> = {
   "SUCCESS_EMAIL_VERIFIED": "Email verified successfully 🎉",
   "SUCCESS_PROFILE_COMPLETED": "Profile completed successfully! 🎉",
   "SUCCESS_PROFILE_UPDATED": "Profile updated successfully ✨",
+  "SUCCESS_UPDATE_USER_INTERESTS": "Interests updated successfully ✨",
 
   // Error messages
   "ERROR_INTERNAL_SERVER": "An unexpected internal server error occurred please try again later",

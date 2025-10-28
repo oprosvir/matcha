@@ -68,10 +68,8 @@ const formSchema = z.object({
     .string()
     .min(5, "Biography must be at least 5 characters")
     .max(500, "Biography must be less than 500 characters"),
-  // TODO: Make these required when backend endpoints are ready
-  // interests: z.array(z.number()).min(1, "At least one interest is required"),
-  // photos: z.array(fileSchema).min(1, "At least one photo is required"),
-  interests: z.array(z.number()).optional(),
+  interests: z.array(z.number()).min(1, "At least one interest is required"),
+  // TODO: Make photos required when backend endpoint is ready
   photos: z.array(fileSchema).optional(),
 });
 
@@ -224,13 +222,13 @@ export function CompleteProfileForm({ user }: { user: User }) {
   };
 
   const onSubmit = (data: FormData) => {
-    // TODO: Add photo upload and interests endpoints on backend
-    // For now, only send basic profile fields
+    // TODO: Add photo upload endpoint on backend
     completeProfile({
       dateOfBirth: data.dateOfBirth,
       gender: data.gender,
       sexualOrientation: data.sexualOrientation,
       biography: data.biography,
+      interestIds: data.interests,
     });
   };
 

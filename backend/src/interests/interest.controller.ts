@@ -1,6 +1,8 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { InterestService } from './interest.service';
+import { CurrentUser } from 'src/auth/current-user.decorator';
+import { UpdateUserInterestsDto } from './dto/update-user-interests.dto';
 
 @Controller('interests')
 export class InterestController {
@@ -11,5 +13,15 @@ export class InterestController {
   async findAll() {
     const interests = await this.interestService.findAll();
     return { success: true, data: interests, messageKey: 'SUCCESS_GET_ALL_INTERESTS' };
+  }
+
+  @UseGuards(AuthGuard)
+  @Put('me')
+  async updateMyInterests(
+    @CurrentUser('sub') userId: string,
+    @Body() updateUserInterestsDto: UpdateUserInterestsDto
+  ) {
+    await this.interestService.updateUserInterests(userId, updateUserInterestsDto.interestIds);
+    return { success: true, messageKey: 'SUCCESS_UPDATE_USER_INTERESTS' };
   }
 }

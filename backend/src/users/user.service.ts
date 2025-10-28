@@ -7,10 +7,14 @@ import { UsersRepository } from './repositories/users.repository';
 import { PublicUserResponseDto, PrivateUserResponseDto } from './dto/user-response.dto';
 import { User } from './repositories/users.repository';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
+import { InterestRepository } from 'src/interests/repository/interest.repository';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly usersRepository: UsersRepository) { }
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly interestRepository: InterestRepository,
+  ) { }
 
   private mapUserToPublicUserResponseDto(user: User): PublicUserResponseDto | null {
     if (!user) return null;
@@ -108,6 +112,10 @@ export class UserService {
     if (!existingUser) { throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND); }
     if (existingUser.profile_completed) { throw new CustomHttpException('PROFILE_ALREADY_COMPLETED', 'Profile already completed', 'ERROR_PROFILE_ALREADY_COMPLETED', HttpStatus.BAD_REQUEST); }
 
+    // Save user interests
+    await this.interestRepository.updateUserInterests(userId, completeProfileDto.interestIds);
+
+    // Complete profile
     const user: User = await this.usersRepository.completeProfile(userId, {
       dateOfBirth: completeProfileDto.dateOfBirth,
       gender: completeProfileDto.gender,

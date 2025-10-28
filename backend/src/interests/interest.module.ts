@@ -8,5 +8,6 @@ import { DatabaseModule } from 'src/database/database.module';
   imports: [DatabaseModule],
   controllers: [InterestController],
   providers: [InterestService, InterestRepository],
+  exports: [InterestRepository],
 })
 export class InterestModule { }
