@@ -6,6 +6,7 @@ import { Field, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 import { useUpdateProfile } from "@/hooks/useUserProfile";
 import type { User } from "@/types/user";
+import { formatDateOfBirth } from "@/utils/dateUtils";
 
 const profileSchema = z.object({
   firstName: z
@@ -95,6 +96,20 @@ export function ProfileForm({ user }: ProfileFormProps) {
           )}
         </Field>
       </div>
+
+      <Field>
+        <FieldLabel htmlFor="date-of-birth">Date of Birth</FieldLabel>
+        <Input
+          id="date-of-birth"
+          type="text"
+          value={user.dateOfBirth ? formatDateOfBirth(user.dateOfBirth) : "Not specified"}
+          disabled
+          className="bg-muted cursor-not-allowed"
+        />
+        <p className="text-sm text-muted-foreground mt-1">
+          Date of birth cannot be changed
+        </p>
+      </Field>
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>

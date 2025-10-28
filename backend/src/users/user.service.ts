@@ -17,6 +17,7 @@ export class UserService {
     return {
       firstName: user.first_name,
       lastName: user.last_name,
+      dateOfBirth: user.date_of_birth,
       gender: user.gender,
       biography: user.biography,
       fameRating: user.fame_rating,
@@ -34,6 +35,7 @@ export class UserService {
       id: user.id,
       firstName: user.first_name,
       lastName: user.last_name,
+      dateOfBirth: user.date_of_birth,
       gender: user.gender,
       sexualOrientation: user.sexual_orientation,
       biography: user.biography,
@@ -107,6 +109,7 @@ export class UserService {
     if (existingUser.profile_completed) { throw new CustomHttpException('PROFILE_ALREADY_COMPLETED', 'Profile already completed', 'ERROR_PROFILE_ALREADY_COMPLETED', HttpStatus.BAD_REQUEST); }
 
     const user: User = await this.usersRepository.completeProfile(userId, {
+      dateOfBirth: completeProfileDto.dateOfBirth,
       gender: completeProfileDto.gender,
       sexualOrientation: completeProfileDto.sexualOrientation,
       biography: completeProfileDto.biography,

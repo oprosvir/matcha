@@ -15,6 +15,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useInterests } from "@/hooks/useInterests";
 import {
   Tags,
@@ -37,6 +38,7 @@ import z from "zod";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompleteProfile } from "@/hooks/useUserProfile";
+import { calculateAge, getMaxDate, formatDateForInput } from "@/utils/dateUtils";
 
 const fileSchema = z
   .instanceof(File)
@@ -47,7 +49,14 @@ const fileSchema = z
   );
 
 const formSchema = z.object({
-  gender: z.enum(["male", "female"]).refine((val) => val !== undefined, {
+  dateOfBirth: z
+    .string()
+    .min(1, "Date of birth is required")
+    .refine(
+      (date) => calculateAge(date) >= 18,
+      { message: "You must be at least 18 years old" }
+  ),
+  gender: z.enum(["male", "female"], {
     message: "Gender is required",
   }),
   sexualOrientation: z
@@ -118,7 +127,7 @@ function FileInputWithCamera({
             />
             <Button
               type="button"
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                 e.stopPropagation();
                 handleRemove();
               }}
@@ -174,6 +183,7 @@ export function CompleteProfileForm({ user }: { user: User }) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      dateOfBirth: "",
       gender: user.gender ?? undefined,
       sexualOrientation: user.sexualOrientation ?? undefined,
       biography: user.biography ?? "",
@@ -217,6 +227,7 @@ export function CompleteProfileForm({ user }: { user: User }) {
     // TODO: Add photo upload and interests endpoints on backend
     // For now, only send basic profile fields
     completeProfile({
+      dateOfBirth: data.dateOfBirth,
       gender: data.gender,
       sexualOrientation: data.sexualOrientation,
       biography: data.biography,
@@ -235,6 +246,26 @@ export function CompleteProfileForm({ user }: { user: User }) {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup>
+            <Field>
+              <FieldLabel>What is your date of birth?</FieldLabel>
+              <Controller
+                name="dateOfBirth"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    type="date"
+                    min="1900-01-01"
+                    max={formatDateForInput(getMaxDate())}
+                    {...field}
+                  />
+                )}
+              />
+              {errors.dateOfBirth && (
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.dateOfBirth.message}
+                </p>
+              )}
+            </Field>
             <Field>
               <FieldLabel>What is your gender?</FieldLabel>
               <Controller

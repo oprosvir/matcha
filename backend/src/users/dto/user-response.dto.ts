@@ -14,6 +14,7 @@ export interface UserInterest {
 export class PublicUserResponseDto {
   firstName: string;
   lastName: string;
+  dateOfBirth: string | null;
   gender: Gender | null;
   biography: string | null;
   fameRating: number;

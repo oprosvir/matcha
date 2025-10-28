@@ -29,6 +29,7 @@ export const UserSchema = z.object({
   username: z.string(),
   firstName: z.string(),
   lastName: z.string(),
+  dateOfBirth: z.string().nullable(),
   gender: GenderSchema.nullable(),
   sexualOrientation: SexualOrientationSchema.nullable(),
   biography: z.string().nullable(),

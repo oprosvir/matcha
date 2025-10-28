@@ -7,6 +7,7 @@ export const messageMap: Record<string, string> = {
   "SUCCESS_PASSWORD_RESET": "Password reset successfully",
   "SUCCESS_VERIFY_EMAIL_SENT": "A verification email has been sent to your email address 📨",
   "SUCCESS_EMAIL_VERIFIED": "Email verified successfully 🎉",
+  "SUCCESS_PROFILE_COMPLETED": "Profile completed successfully! 🎉",
   "SUCCESS_PROFILE_UPDATED": "Profile updated successfully ✨",
 
   // Error messages

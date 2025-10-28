@@ -15,6 +15,7 @@ interface UpdateProfileRequest {
 }
 
 interface CompleteProfileRequest {
+  dateOfBirth: string;
   gender: Gender;
   sexualOrientation: SexualOrientation;
   biography: string;
@@ -29,19 +30,19 @@ export const userApi = {
     return response.data;
   },
 
-  completeProfile: async (request: CompleteProfileRequest): Promise<User> => {
+  completeProfile: async (request: CompleteProfileRequest): Promise<{ data: User; messageKey: string }> => {
     const response = await parseApiResponse(apiClient.post('/users/me/complete', request), createApiResponseSchema(UserSchema));
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
     }
-    return response.data;
+    return { data: response.data, messageKey: response.messageKey };
   },
 
-  updateProfile: async (request: UpdateProfileRequest): Promise<User> => {
+  updateProfile: async (request: UpdateProfileRequest): Promise<{ data: User; messageKey: string }> => {
     const response = await parseApiResponse(apiClient.put('/users/me', request), createApiResponseSchema(UserSchema));
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
     }
-    return response.data;
+    return { data: response.data, messageKey: response.messageKey };
   }
 };

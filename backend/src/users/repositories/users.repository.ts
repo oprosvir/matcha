@@ -22,6 +22,7 @@ export interface User {
   is_email_verified: boolean;
   first_name: string;
   last_name: string;
+  date_of_birth: string | null;
   gender: Gender | null;
   sexual_orientation: SexualOrientation | null;
   biography: string | null;
@@ -46,6 +47,7 @@ const USER_BASE_QUERY = `
     u.password_hash,
     u.first_name,
     u.last_name,
+    u.date_of_birth,
     u.gender,
     u.sexual_orientation,
     u.biography,
@@ -161,6 +163,7 @@ export class UsersRepository {
   }
 
   async completeProfile(userId: string, dto: {
+    dateOfBirth: string;
     gender: Gender;
     sexualOrientation: SexualOrientation;
     biography: string;
@@ -168,8 +171,8 @@ export class UsersRepository {
     const query = `
       WITH updated_user AS (
         UPDATE users
-        SET gender = $1, sexual_orientation = $2, biography = $3, profile_completed = TRUE
-        WHERE id = $4
+        SET date_of_birth = $1, gender = $2, sexual_orientation = $3, biography = $4, profile_completed = TRUE
+        WHERE id = $5
         RETURNING *
       )
       SELECT u.*,
@@ -189,7 +192,7 @@ export class UsersRepository {
       FROM updated_user u;
     `;
 
-    const values = [dto.gender, dto.sexualOrientation, dto.biography, userId];
+    const values = [dto.dateOfBirth, dto.gender, dto.sexualOrientation, dto.biography, userId];
 
     try {
       const result = await this.db.query<User>(query, values);

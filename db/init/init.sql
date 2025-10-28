@@ -16,6 +16,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     first_name VARCHAR(50),
     last_name VARCHAR(50),
+    date_of_birth DATE DEFAULT NULL,
     gender gender_type DEFAULT NULL,
     sexual_orientation sexual_orientation_type DEFAULT 'bisexual',
     biography TEXT DEFAULT NULL,

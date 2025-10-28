@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '../api/user/user';
 import { toast } from 'sonner';
 import type { User } from '@/types/user';
+import { getToastMessage } from '@/lib/messageMap';
 
 export function useCurrentUser() {
   const query = useQuery({
@@ -21,9 +22,9 @@ export function useCompleteProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: userApi.completeProfile,
-    onSuccess: (user: User) => {
-      queryClient.setQueryData(['user'], user);
-      toast.success('Profile completed successfully! 🎉');
+    onSuccess: ({ data, messageKey }: { data: User; messageKey: string }) => {
+      queryClient.setQueryData(['user'], data);
+      toast.success(getToastMessage(messageKey));
     },
     onError: (error) => {
       toast.error(error.message);
@@ -35,9 +36,9 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: userApi.updateProfile,
-    onSuccess: (user: User) => {
-      queryClient.setQueryData(['user'], user);
-      toast.success('Profile updated successfully 🎉');
+    onSuccess: ({ data, messageKey }: { data: User; messageKey: string }) => {
+      queryClient.setQueryData(['user'], data);
+      toast.success(getToastMessage(messageKey));
     },
     onError: (error) => {
       toast.error(error.message);
