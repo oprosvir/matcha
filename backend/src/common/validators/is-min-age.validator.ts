@@ -23,7 +23,7 @@ export function IsMinAge(minAge: number, validationOptions?: ValidationOptions) 
           const hasBirthdayPassed =
             today.getMonth() > birthDate.getMonth() ||
             (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
-          
+
           const actualAge = hasBirthdayPassed ? age : age - 1;
           return actualAge >= minAge;
         },

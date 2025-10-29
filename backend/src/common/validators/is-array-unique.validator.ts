@@ -8,10 +8,9 @@ export function IsArrayUnique(validationOptions?: ValidationOptions) {
       propertyName: propertyName,
       options: validationOptions,
       validator: {
-        validate(value: any, args: ValidationArguments) {
+        validate(value: any) {
           if (!Array.isArray(value)) return false;
 
-          // Check if all elements are unique
           const uniqueSet = new Set(value);
           return uniqueSet.size === value.length;
         },

@@ -89,6 +89,9 @@ function FileInputWithCamera({
     const file = event.target.files?.[0];
     if (file) {
       onChange?.(file);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
@@ -206,14 +209,15 @@ export function CompleteProfileForm({ user }: { user: User }) {
     if (isSelected) {
       setValue(
         "interests",
-        currentInterests.filter((id) => id !== interestId)
+        currentInterests.filter((id) => id !== interestId),
+        { shouldValidate: true }
       );
     } else {
       // Limit to maximum 10 interests
       if (currentInterests.length >= 10) {
         return; // Don't allow selecting more than 10
       }
-      setValue("interests", [...currentInterests, interestId]);
+      setValue("interests", [...currentInterests, interestId], { shouldValidate: true });
     }
   };
 

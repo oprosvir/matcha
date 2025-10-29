@@ -1,10 +1,11 @@
-import { IsArray, IsInt, ArrayMaxSize } from 'class-validator';
-import { IsArrayUnique } from 'src/common/validators/is-array-unique.validator';
+import { IsArray, IsInt, ArrayMaxSize, ArrayMinSize } from 'class-validator';
+import { IsArrayUnique } from 'src/common/validators';
 
 export class UpdateUserInterestsDto {
   @IsArray()
-  @ArrayMaxSize(10, { message: 'Maximum 10 interests allowed' })
+  @ArrayMaxSize(10)
+  @ArrayMinSize(1)
   @IsInt({ each: true })
-  @IsArrayUnique({ message: 'Interest IDs must be unique' })
+  @IsArrayUnique()
   interestIds: number[];
 }

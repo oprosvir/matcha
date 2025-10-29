@@ -58,6 +58,9 @@ export function InterestsSelector({ currentInterests }: InterestsSelectorProps) 
   };
 
   const handleSave = () => {
+    if (selectedIds.length === 0) {
+      return;
+    }
     updateInterests(selectedIds);
     setHasChanges(false);
   };
@@ -130,7 +133,7 @@ export function InterestsSelector({ currentInterests }: InterestsSelectorProps) 
           <Button
             type="button"
             onClick={handleSave}
-            disabled={isPending}
+            disabled={isPending || selectedIds.length === 0}
           >
             {isPending ? "Saving..." : "Save Changes"}
           </Button>
