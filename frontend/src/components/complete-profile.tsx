@@ -62,7 +62,7 @@ const formSchema = z.object({
   // TODO: Make these required when backend endpoints are ready
   // interests: z.array(z.number()).min(1, "At least one interest is required"),
   // photos: z.array(fileSchema).min(1, "At least one photo is required"),
-  interests: z.array(z.number()).optional(),
+  interests: z.array(z.string()).optional(),
   photos: z.array(fileSchema).optional(),
 });
 
@@ -191,7 +191,7 @@ export function CompleteProfileForm({ user }: { user: User }) {
   } = form;
   const selectedInterests = watch("interests");
 
-  const handleInterestToggle = (interestId: number) => {
+  const handleInterestToggle = (interestId: string) => {
     const currentInterests = selectedInterests || [];
     const isSelected = currentInterests.includes(interestId);
 

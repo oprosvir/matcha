@@ -7,7 +7,7 @@ export class EventService {
     @Inject(forwardRef(() => MessagesService)) private readonly messagesService: MessagesService
   ) { }
 
-  async handleSendMessageEvent(chatId: string, fromUserId: string, content: string): Promise<void> {
-    await this.messagesService.createMessage(chatId, fromUserId, content);
+  async handleSendMessageEvent(chatId: string, senderUserId: string, senderSocketId: string, content: string): Promise<void> {
+    await this.messagesService.createMessage({ chatId, senderId: senderUserId, senderSocketId: senderSocketId, content });
   }
 }

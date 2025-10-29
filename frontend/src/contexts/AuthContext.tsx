@@ -11,8 +11,6 @@ import { authApi } from "@/api/auth/auth";
 import { useQuery } from "@tanstack/react-query";
 import { userApi } from "@/api/user/user";
 import type { User } from "@/types/user";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import type { Socket } from "socket.io-client";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -23,11 +21,6 @@ interface AuthContextType {
   signIn: (accessToken: string) => void;
   signOut: () => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
-  socket: Socket | null;
-  isWebSocketConnected: boolean;
-  joinChat: (chatId: string) => void;
-  leaveChat: (chatId: string) => void;
-  sendMessage: (chatId: string, content: string, userId?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,25 +41,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryFn: userApi.getOwnProfile,
     enabled: isAuthenticated,
   });
-
-  // WebSocket connection
-  const {
-    socket,
-    isConnected: isWebSocketConnected,
-    joinChat,
-    leaveChat,
-    sendMessage: sendMessageWS,
-  } = useWebSocket(isAuthenticated);
-
-  // Wrap sendMessage to include userId
-  const sendMessage = useCallback(
-    (chatId: string, content: string) => {
-      if (user?.id) {
-        sendMessageWS(chatId, content, user.id);
-      }
-    },
-    [user?.id, sendMessageWS]
-  );
 
   const signOut = useCallback(async () => {
     if (refreshTimer) {
@@ -162,12 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signOut,
         refreshAccessToken,
-        // WebSocket related
-        socket,
-        isWebSocketConnected,
-        joinChat,
-        leaveChat,
-        sendMessage,
       }}
     >
       {children}

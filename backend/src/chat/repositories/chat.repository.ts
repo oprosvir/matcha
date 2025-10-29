@@ -15,9 +15,9 @@ export class ChatRepository {
         VALUES ($1, $2) 
         RETURNING 
           id,
-          user1_id,
-          user2_id,
-          created_at
+          user1_id as "user1Id",
+          user2_id as "user2Id",
+          created_at as "createdAt"
       `, [user1, user2]);
       return result.rows[0];
     } catch (error) {
@@ -31,9 +31,9 @@ export class ChatRepository {
       const result = await this.db.query<ChatDto[]>(`
         SELECT 
           id,
-          user1_id,
-          user2_id,
-          created_at
+          user1_id as "user1Id",
+          user2_id as "user2Id",
+          created_at as "createdAt"
         FROM chats 
         WHERE user1_id = $1 OR user2_id = $1
       `, [userId]);
@@ -44,10 +44,13 @@ export class ChatRepository {
     }
   }
 
-  async findChatById(chatId: string): Promise<ChatDto | null> {
+  async findChatById(chatId: string): Promise<ChatDto> {
     try {
-      const result = await this.db.query<ChatDto>(`SELECT * FROM chats WHERE id = $1`, [chatId]);
-      return result.rows[0] || null;
+      const result = await this.db.query<ChatDto>(`SELECT id, user1_id as "user1Id", user2_id as "user2Id", created_at as "createdAt" FROM chats WHERE id = $1`, [chatId]);
+      if (result.rows.length === 0) {
+        throw new CustomHttpException('NOT_FOUND', 'Chat not found.', 'ERROR_NOT_FOUND', HttpStatus.NOT_FOUND);
+      }
+      return result.rows[0];
     } catch (error) {
       console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);

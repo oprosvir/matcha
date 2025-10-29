@@ -1,19 +1,10 @@
-import { IsNotEmpty, IsString, IsUUID } from "class-validator";
+import { PublicUserDto } from "./user.dto";
+import { PickType } from "@nestjs/mapped-types";
+import { IsString, IsNotEmpty, IsUrl } from "class-validator";
 
-export class UserPreviewDto {
-  @IsUUID(4, { message: 'ID must be a valid UUID' })
-  @IsNotEmpty({ message: 'ID is required' })
-  id: string;
-
-  @IsString({ message: 'First name must be a string' })
-  @IsNotEmpty({ message: 'First name is required' })
-  firstName: string;
-
-  @IsString({ message: 'Last name must be a string' })
-  @IsNotEmpty({ message: 'Last name is required' })
-  lastName: string;
-
+export class UserPreviewDto extends PickType(PublicUserDto, ['id', 'firstName', 'lastName'] as const) {
   @IsString({ message: 'Profile picture must be a string' })
   @IsNotEmpty({ message: 'Profile picture is required' })
+  @IsUrl()
   profilePicture: string;
 }

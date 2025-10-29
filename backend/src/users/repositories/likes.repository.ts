@@ -58,4 +58,13 @@ export class LikesRepository {
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async unLikeUser(fromUserId: string, toUserId: string): Promise<void> {
+    try {
+      await this.db.query(`DELETE FROM likes WHERE from_user_id = $1 AND to_user_id = $2`, [fromUserId, toUserId]);
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

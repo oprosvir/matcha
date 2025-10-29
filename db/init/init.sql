@@ -98,8 +98,7 @@ CREATE TABLE messages (
     chat_id UUID REFERENCES chats(id) ON DELETE CASCADE,
     sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_read BOOLEAN DEFAULT FALSE
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 9. Notifications Table

@@ -9,9 +9,15 @@ export class WebSocketEmitter {
     this.server = server;
   }
 
-  emitToRoom(room: string, event: string, data: any) {
+  emitToRoom(room: string, event: string, data: any, senderSocketId: string) {
     if (this.server) {
-      this.server.to(room).emit(event, data);
+      this.server.to(room).except(senderSocketId).emit(event, data);
+    }
+  }
+
+  emitToUser(userId: string, event: string, data: any) {
+    if (this.server) {
+      this.server.to(`user:${userId}`).emit(event, data);
     }
   }
 }

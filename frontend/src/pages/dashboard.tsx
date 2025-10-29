@@ -49,7 +49,7 @@ export function Dashboard() {
   // Profile completed - show dashboard with AppLayout
   // TODO: make user photo not optional
   if (user && UserHasCompletedProfile(user)) {
-    const profilePic = user.photos?.find((p) => p.is_profile_pic);
+    const profilePic = user.photos?.find((p) => p.isProfilePic);
 
     return (
       <AppLayout>

@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
@@ -11,6 +11,7 @@ import { useConversations } from "@/hooks/useConversations";
 import type { Conversation } from "@/types/chat";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
+import { useChat } from "@/contexts/ChatContext";
 
 function ConversationCardContent({
   conversation,
@@ -21,9 +22,10 @@ function ConversationCardContent({
     conversation.chatId
   );
   const [messageContent, setMessageContent] = useState("");
-  const { sendMessage, isWebSocketConnected, joinChat, leaveChat } = useAuth();
+  const { sendMessage, isWebSocketConnected, joinChat, leaveChat } = useChat();
+  const { user, isUserLoading } = useAuth();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Join chat room when component mounts
   useEffect(() => {
     if (isWebSocketConnected) {
       joinChat(conversation.chatId);
@@ -35,6 +37,12 @@ function ConversationCardContent({
       }
     };
   }, [conversation.chatId, isWebSocketConnected, joinChat, leaveChat]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView();
+    }
+  }, [messages, conversation.chatId]); // When messages change or conversation changes, scroll to bottom
 
   const handleSendMessage = () => {
     if (messageContent.trim() && isWebSocketConnected) {
@@ -50,7 +58,7 @@ function ConversationCardContent({
     }
   };
 
-  return messagesLoading ? (
+  return messagesLoading || isUserLoading ? (
     <div>
       <Skeleton className="h-10 w-10 rounded-full" />
     </div>
@@ -68,38 +76,39 @@ function ConversationCardContent({
             </div>
           </div>
         ) : (
-          messages?.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${
-                msg.senderId === "current-user"
-                  ? "justify-end"
-                  : "justify-start"
-              }`}
-            >
+          <>
+            {messages?.map((msg) => (
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  msg.senderId === "current-user"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100 text-gray-900"
+                key={msg.id}
+                className={`flex ${
+                  msg.senderId === user?.id ? "justify-end" : "justify-start"
                 }`}
               >
-                <p className="text-sm">{msg.content}</p>
-                <p
-                  className={`text-xs mt-1 ${
-                    msg.senderId === "current-user"
-                      ? "text-blue-100"
-                      : "text-gray-500"
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg break-words ${
+                    msg.senderId === user?.id
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 text-gray-900"
                   }`}
                 >
-                  {new Date(msg.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
+                  <p className="text-sm">{msg.content}</p>
+                  <p
+                    className={`text-xs mt-1 ${
+                      msg.senderId === user?.id
+                        ? "text-blue-100"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {new Date(msg.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+            <div ref={messagesEndRef} />
+          </>
         )}
       </div>
 
@@ -123,11 +132,6 @@ function ConversationCardContent({
             <Send className="h-4 w-4" />
           </Button>
         </div>
-        {!isWebSocketConnected && (
-          <p className="text-xs text-red-500 mt-1">
-            WebSocket disconnected. Messages may not be sent.
-          </p>
-        )}
       </div>
     </CardContent>
   );
@@ -138,7 +142,6 @@ export function Chat() {
     useState<Conversation | null>(null);
   const { data: conversations, isLoading: conversationsLoading } =
     useConversations();
-  const { isWebSocketConnected } = useAuth();
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -148,7 +151,7 @@ export function Chat() {
     <AppLayout>
       <div className="flex flex-row gap-6 h-full">
         {/* Matches Sidebar */}
-        <Card className="flex flex-col w-1/4 h-full">
+        <Card className="flex flex-col w-1/4 h-[calc(100vh-10rem)]">
           <CardContent className="overflow-y-auto p-0 h-full">
             {conversationsLoading ? (
               <div className="p-4 space-y-2">
@@ -205,7 +208,7 @@ export function Chat() {
                 ))}
               </div>
             ) : (
-              <div className="p-4 text-center text-gray-500">
+              <div className="p-4 text-center text-gray-500 h-full flex flex-col items-center justify-center">
                 <p className="text-sm">No matches yet</p>
                 <p className="text-xs mt-1">
                   Start swiping to find your perfect match!
@@ -216,7 +219,7 @@ export function Chat() {
         </Card>
 
         {/* Chat Area */}
-        <Card className="w-3/4 flex flex-col p-0 h-full">
+        <Card className="w-3/4 flex flex-col p-0 max-h-[calc(100vh-10rem)]">
           {selectedConversation ? (
             <>
               {/* Chat Header */}
@@ -241,16 +244,6 @@ export function Chat() {
                         {selectedConversation.profilePreview.lastName}
                       </h3>
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        isWebSocketConnected ? "bg-green-500" : "bg-red-500"
-                      }`}
-                    ></div>
-                    <span className="text-xs text-gray-500">
-                      {isWebSocketConnected ? "Connected" : "Disconnected"}
-                    </span>
                   </div>
                 </div>
               </CardHeader>

@@ -7,9 +7,7 @@ export class AppService {
 
   async getHealth() {
     try {
-      // Check database connectivity
       await this.databaseService.query('SELECT 1');
-
       return {
         status: 'ok',
         timestamp: new Date().toISOString(),

@@ -4,6 +4,7 @@ import { Dashboard } from "./pages/dashboard";
 import { Profile } from "./pages/profile";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth, useUser } from "./contexts/AuthContext";
+import { ChatProvider } from "./contexts/ChatContext";
 import { Spinner } from "./components/ui/spinner";
 import { AuthLayout } from "./components/layouts/AuthLayout";
 import { Signin } from "./pages/auth/sign-in";
@@ -97,85 +98,87 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Toaster />
-        <Routes>
-          <Route path="/auth" element={<AuthLayout />}>
-            <Route index element={<Navigate to="sign-in" replace />} />
+        <ChatProvider>
+          <Toaster />
+          <Routes>
+            <Route path="/auth" element={<AuthLayout />}>
+              <Route index element={<Navigate to="sign-in" replace />} />
+              <Route
+                path="sign-in"
+                element={
+                  <PublicRoute>
+                    <Signin />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="sign-up"
+                element={
+                  <PublicRoute>
+                    <Signup />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="forgot-password"
+                element={
+                  <PublicRoute>
+                    <ForgotPassword />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="reset-password"
+                element={
+                  <PublicRoute>
+                    <ResetPassword />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="send-verify-email"
+                element={
+                  <AuthenticatedRoute>
+                    <SendVerifyEmail />
+                  </AuthenticatedRoute>
+                }
+              />
+              <Route
+                path="verify-email"
+                element={
+                  <AuthenticatedRoute>
+                    <VerifyEmail />
+                  </AuthenticatedRoute>
+                }
+              />
+            </Route>
             <Route
-              path="sign-in"
+              path="/"
               element={
-                <PublicRoute>
-                  <Signin />
-                </PublicRoute>
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
               }
             />
             <Route
-              path="sign-up"
+              path="/profile"
               element={
-                <PublicRoute>
-                  <Signup />
-                </PublicRoute>
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
               }
             />
             <Route
-              path="forgot-password"
+              path="/chat"
               element={
-                <PublicRoute>
-                  <ForgotPassword />
-                </PublicRoute>
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
               }
             />
-            <Route
-              path="reset-password"
-              element={
-                <PublicRoute>
-                  <ResetPassword />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="send-verify-email"
-              element={
-                <AuthenticatedRoute>
-                  <SendVerifyEmail />
-                </AuthenticatedRoute>
-              }
-            />
-            <Route
-              path="verify-email"
-              element={
-                <AuthenticatedRoute>
-                  <VerifyEmail />
-                </AuthenticatedRoute>
-              }
-            />
-          </Route>
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <Chat />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<div>404</div>} />
-        </Routes>
+            <Route path="*" element={<div>404</div>} />
+          </Routes>
+        </ChatProvider>
       </AuthProvider>
     </BrowserRouter>
   );

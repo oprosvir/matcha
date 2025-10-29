@@ -10,6 +10,8 @@ import {
   MessageCircle,
   type LucideIcon,
 } from "lucide-react";
+import { NotificationMenu } from "../ui/notification-bell";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -19,6 +21,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { data: notifications } = useNotifications();
 
   const handleSignOut = async () => {
     await signOut();
@@ -78,6 +81,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   );
                 })}
               </nav>
+              <NotificationMenu notifications={notifications ?? []} />
             </div>
 
             {/* Sign out button */}

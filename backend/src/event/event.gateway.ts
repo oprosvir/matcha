@@ -30,16 +30,19 @@ export class EventGateway implements OnModuleInit {
   }
 
   handleConnection(client: Socket) {
+    client.join(`user:${client.data.user.id}`);
     console.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
+    client.leave(`user:${client.data.user.id}`);
     console.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('joinChat')
   handleJoinChat(@MessageBody() data: { chatId: string }, @ConnectedSocket() client: Socket) {
     client.join(data.chatId);
+    console.log('This is the client id: ', client.id);
     console.log(`User ${client.id} joined chat ${data.chatId}`);
   }
 
@@ -54,6 +57,6 @@ export class EventGateway implements OnModuleInit {
     @MessageBody() data: { chatId: string; content: string; userId: string },
     @ConnectedSocket() client: Socket
   ) {
-    this.eventService.handleSendMessageEvent(data.chatId, data.userId, data.content);
+    this.eventService.handleSendMessageEvent(data.chatId, data.userId, client.id, data.content);
   }
 }

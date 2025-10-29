@@ -4,10 +4,7 @@ export const InterestSchema = z.object({
   id: z.string(),
   name: z.string(),
 });
-export type Interest = z.infer<typeof InterestSchema>;
-
-export const InterestsSchema = z.array(InterestSchema);
-export type Interests = z.infer<typeof InterestsSchema>;
+export type Interest = z.infer<typeof InterestSchema>;;
 
 export const GenderSchema = z.enum(['male', 'female']);
 export type Gender = z.infer<typeof GenderSchema>;
@@ -17,12 +14,9 @@ export type SexualOrientation = z.infer<typeof SexualOrientationSchema>;
 export const PhotoSchema = z.object({
   id: z.string(),
   url: z.string(),
-  is_profile_pic: z.boolean(),
+  isProfilePic: z.boolean(),
 });
 export type Photo = z.infer<typeof PhotoSchema>;
-
-export const PhotosSchema = z.array(PhotoSchema);
-export type Photos = z.infer<typeof PhotosSchema>;
 
 export const UserSchema = z.object({
   id: z.string(),
@@ -39,8 +33,8 @@ export const UserSchema = z.object({
   isEmailVerified: z.boolean(),
   createdAt: z.string().transform((str) => new Date(str)),
   lastTimeActive: z.string().nullable().transform((str) => str ? new Date(str) : null),
-  photos: PhotosSchema,
-  interests: InterestsSchema,
+  photos: z.array(PhotoSchema),
+  interests: z.array(InterestSchema),
 });
 export type User = z.infer<typeof UserSchema>;
 
@@ -55,8 +49,8 @@ export const ProfileSchema = z.object({
   longitude: z.string().nullable(),
   lastTimeActive: z.string().nullable().transform((str) => str ? new Date(str) : null),
   createdAt: z.string().transform((str) => new Date(str)),
-  photos: PhotosSchema,
-  interests: InterestsSchema,
+  photos: z.array(PhotoSchema),
+  interests: z.array(InterestSchema),
 });
 export type Profile = z.infer<typeof ProfileSchema>;
 

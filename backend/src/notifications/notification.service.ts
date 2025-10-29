@@ -1,110 +1,151 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { NotificationRepository, NotificationType, Notification } from './repositories/notification.repository';
+import { NotificationRepository } from './repositories/notification.repository';
+import { NotificationType } from 'src/common/enums/notification-type';
 import { UsersRepository } from 'src/users/repositories/users.repository';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
-import { EventGateway } from 'src/event/event.gateway';
+import { CreateNotificationRequestDto } from './dto/create-notification/create-notification-request.dto';
+import { CreateNotificationResponseDto } from './dto/create-notification/create-notification-response.dto';
+import { Notification } from './repositories/notification.repository';
+import { ReadNotificationsRequestDto } from './dto/read-notifications-request/read-notifications-request.dto';
+import { WebSocketEmitter } from 'src/event/web-socket-emitter';
 
 type NotificationLike = {
+  id: string;
+  read: boolean;
   type: NotificationType.LIKE;
   payload: {
     fromUserId: string;
     fromUserFirstName: string;
     fromUserLastName: string;
   };
-  timestamp: string;
+  createdAt: string;
 }
 
 type NotificationMatch = {
+  id: string;
+  read: boolean;
   type: NotificationType.MATCH;
   payload: {
     withUserId: string;
     withUserFirstName: string;
     withUserLastName: string;
   };
-  timestamp: string;
+  createdAt: string;
 }
 
 type NotificationView = {
+  id: string;
+  read: boolean;
   type: NotificationType.VIEW;
   payload: {
     viewerUserId: string;
     viewerUserFirstName: string;
     viewerUserLastName: string;
   };
-  timestamp: string;
+  createdAt: string;
 }
 
 type NotificationUnlike = {
+  id: string;
+  read: boolean;
   type: NotificationType.UNLIKE;
   payload: {
     fromUserId: string;
     fromUserFirstName: string;
     fromUserLastName: string;
   };
-  timestamp: string;
+  createdAt: string;
 }
 
-type NotificationEvent = NotificationLike | NotificationMatch | NotificationView | NotificationUnlike;
+export type NotificationEvent = NotificationLike | NotificationMatch | NotificationView | NotificationUnlike;
 
 @Injectable()
 export class NotificationService {
-  constructor(private readonly notificationRepository: NotificationRepository, private readonly usersRepository: UsersRepository, private readonly eventGateway: EventGateway) { }
+  constructor(private readonly notificationRepository: NotificationRepository, private readonly usersRepository: UsersRepository, private readonly webSocketEmitter: WebSocketEmitter) { }
 
-  private async getNotificationEventContent(notification: Notification): Promise<NotificationEvent> {
-    const sourceUser = await this.usersRepository.findById(notification.source_user_id);
+  private async getNotificationEventContent(notification: CreateNotificationResponseDto): Promise<NotificationEvent> {
+    const sourceUser = await this.usersRepository.findById(notification.sourceUserId);
     if (!sourceUser) {
       throw new CustomHttpException('NOTIFICATION_USER_NOT_FOUND', 'Notification user not found.', 'ERROR_NOTIFICATION_USER_NOT_FOUND', HttpStatus.NOT_FOUND);
     }
     switch (notification.type) {
       case NotificationType.LIKE:
         return {
+          id: notification.id,
+          read: notification.read,
           type: NotificationType.LIKE,
           payload: {
             fromUserId: sourceUser.id,
-            fromUserFirstName: sourceUser.first_name,
-            fromUserLastName: sourceUser.last_name,
+            fromUserFirstName: sourceUser.firstName,
+            fromUserLastName: sourceUser.lastName,
           },
-          timestamp: notification.created_at.toISOString(),
+          createdAt: notification.createdAt,
         };
       case NotificationType.MATCH:
         return {
+          id: notification.id,
+          read: notification.read,
           type: NotificationType.MATCH,
           payload: {
             withUserId: sourceUser.id,
-            withUserFirstName: sourceUser.first_name,
-            withUserLastName: sourceUser.last_name,
+            withUserFirstName: sourceUser.firstName,
+            withUserLastName: sourceUser.lastName,
           },
-          timestamp: notification.created_at.toISOString(),
+          createdAt: notification.createdAt,
         };
       case NotificationType.VIEW:
         return {
+          id: notification.id,
+          read: notification.read,
           type: NotificationType.VIEW,
           payload: {
             viewerUserId: sourceUser.id,
-            viewerUserFirstName: sourceUser.first_name,
-            viewerUserLastName: sourceUser.last_name,
+            viewerUserFirstName: sourceUser.firstName,
+            viewerUserLastName: sourceUser.lastName,
           },
-          timestamp: notification.created_at.toISOString(),
+          createdAt: notification.createdAt,
         }
       case NotificationType.UNLIKE:
         return {
+          id: notification.id,
+          read: notification.read,
           type: NotificationType.UNLIKE,
           payload: {
             fromUserId: sourceUser.id,
-            fromUserFirstName: sourceUser.first_name,
-            fromUserLastName: sourceUser.last_name,
+            fromUserFirstName: sourceUser.firstName,
+            fromUserLastName: sourceUser.lastName,
           },
-          timestamp: notification.created_at.toISOString(),
+          createdAt: notification.createdAt,
         };
       default:
         throw new CustomHttpException('NOTIFICATION_TYPE_NOT_FOUND', 'Notification type not found.', 'ERROR_NOTIFICATION_TYPE_NOT_FOUND', HttpStatus.NOT_FOUND);
     }
   }
 
-  async createNotification(user_id: string, type: NotificationType, source_user_id: string): Promise<Notification> {
-    const newNotification = await this.notificationRepository.createNotification(user_id, type, source_user_id);
+  async createNotification(createNotificationRequestDto: CreateNotificationRequestDto): Promise<CreateNotificationResponseDto> {
+    const newNotification = await this.notificationRepository.createNotification(createNotificationRequestDto);
     const notificationEvent: NotificationEvent = await this.getNotificationEventContent(newNotification);
-    this.eventGateway.server.to(user_id).emit('notification', notificationEvent);
+    this.webSocketEmitter.emitToUser(createNotificationRequestDto.userId, notificationEvent.type, notificationEvent.payload);
     return newNotification;
+  }
+
+  async findAllNotifications(userId: string): Promise<NotificationEvent[]> {
+    const notifications: Notification[] = await this.notificationRepository.findAllNotifications(userId);
+    const notificationEvents: NotificationEvent[] = [];
+    for (const notification of notifications) {
+      notificationEvents.push(await this.getNotificationEventContent({
+        id: notification.id,
+        userId: notification.user_id,
+        type: notification.type,
+        sourceUserId: notification.source_user_id,
+        read: notification.read,
+        createdAt: notification.created_at.toISOString(),
+      }));
+    }
+    return notificationEvents;
+  }
+
+  async readNotifications(userId: string, readNotificationsRequestDto: ReadNotificationsRequestDto): Promise<void> {
+    await this.notificationRepository.updateNotificationsReadStatusBatch(userId, readNotificationsRequestDto.notificationIds);
   }
 }

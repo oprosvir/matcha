@@ -1,6 +1,7 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { InterestService } from './interest.service';
+import { FindAllResponseDto } from './dto/find-all/find-all-response.dto';
 
 @Controller('interests')
 export class InterestController {
@@ -8,8 +9,8 @@ export class InterestController {
 
   @UseGuards(AuthGuard)
   @Get('all')
-  async findAll() {
-    const interests = await this.interestService.findAll();
-    return { success: true, data: interests, messageKey: 'SUCCESS_GET_ALL_INTERESTS' };
+  async findAll(): Promise<{ success: boolean, data: FindAllResponseDto, messageKey: string }> {
+    const response: FindAllResponseDto = await this.interestService.findAll();
+    return { success: true, data: response, messageKey: 'SUCCESS_GET_ALL_INTERESTS' };
   }
 }

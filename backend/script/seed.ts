@@ -32,7 +32,7 @@ const pool = new Pool({
   port: parseInt(process.env.DB_PORT || '5432'),
 });
 
-const NUM_USERS = 650;
+const NUM_USERS = 50;
 const MAIN_USER_EMAIL = process.env.DEV_ACCOUNT_EMAIL || 'test@example.com';
 const MAIN_USER_USERNAME = process.env.DEV_ACCOUNT_USERNAME || 'testuser';
 const MAIN_USER_FIRSTNAME = process.env.DEV_ACCOUNT_FIRSTNAME || 'Test';

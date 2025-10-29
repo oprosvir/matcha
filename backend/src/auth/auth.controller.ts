@@ -5,38 +5,45 @@ import * as jwt from 'jsonwebtoken';
 import { AuthGuard } from './auth.guard';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import { CurrentUser } from './current-user.decorators';
+import { SignInRequestDto } from './dto/sign-in/sign-in-request.dto';
+import { SignUpRequestDto } from './dto/sign-up/sign-up-request.dto';
+import { SignInResponseDto } from './dto/sign-in/sign-in-response.dto';
+import { SignUpResponseDto } from './dto/sign-up/sign-up-response.dto';
+import { RefreshTokenResponseDto } from './dto/refresh-token/refresh-token-response.dto';
+import { SendPasswordResetEmailRequestDto } from './dto/send-password-reset-email/send-password-reset-email-request.dto';
+import { ResetPasswordRequestDto } from './dto/reset-password/reset-password-request.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
   @Post('sign-up')
-  async signUp(@Body('email') email: string, @Body('password') password: string, @Body('firstName') firstName: string, @Body('lastName') lastName: string, @Body('username') username: string, @Res({ passthrough: true }) res: Response) {
-    const { accessToken, refreshToken } = await this.authService.signUp(email, password, firstName, lastName, username);
+  async signUp(@Body() signUpRequestDto: SignUpRequestDto, @Res({ passthrough: true }) res: Response): Promise<{ success: boolean, data: SignUpResponseDto, messageKey: string }> {
+    const response: SignUpResponseDto = await this.authService.signUp(signUpRequestDto.email, signUpRequestDto.password, signUpRequestDto.firstName, signUpRequestDto.lastName, signUpRequestDto.username);
 
-    res.cookie('refresh_token', refreshToken, {
+    res.cookie('refresh_token', response.refreshToken, {
       httpOnly: true,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // Refresh token expires in 7 days
     });
 
-    return { success: true, data: { accessToken: accessToken }, messageKey: 'SUCCESS_SIGNED_UP' };
+    return { success: true, data: response, messageKey: 'SUCCESS_SIGNED_UP' };
   }
 
   @Post('sign-in')
-  async signIn(@Body('username') username: string, @Body('password') password: string, @Res({ passthrough: true }) res: Response) {
-    const { accessToken, refreshToken } = await this.authService.signIn(username, password);
-    res.cookie('refresh_token', refreshToken, {
+  async signIn(@Body() signInRequestDto: SignInRequestDto, @Res({ passthrough: true }) res: Response): Promise<{ success: boolean, data: SignInResponseDto, messageKey: string }> {
+    const response: SignInResponseDto = await this.authService.signIn(signInRequestDto.username, signInRequestDto.password);
+    res.cookie('refresh_token', response.refreshToken, {
       httpOnly: true,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // Refresh token expires in 7 days
     });
-    return { success: true, data: { accessToken, refreshToken }, messageKey: 'SUCCESS_SIGNED_IN' };
+    return { success: true, data: response, messageKey: 'SUCCESS_SIGNED_IN' };
   }
 
   @UseGuards(AuthGuard)
   @Post('sign-out')
-  async signOut(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async signOut(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<{ success: boolean, messageKey: string }> {
     const refreshToken = req.cookies['refresh_token'];
     if (!refreshToken) throw new CustomHttpException('NO_REFRESH_TOKEN_PROVIDED', 'No refresh token provided', 'ERROR_NO_REFRESH_TOKEN_PROVIDED', HttpStatus.UNAUTHORIZED);
     const payload: any = jwt.decode(refreshToken);
@@ -50,22 +57,22 @@ export class AuthController {
   }
 
   @Get('refresh-token')
-  async refreshToken(@Req() req: Request) {
+  async refreshToken(@Req() req: Request): Promise<{ success: boolean, data: RefreshTokenResponseDto, messageKey: string }> {
     const refreshToken = req.cookies['refresh_token'];
     if (!refreshToken) throw new CustomHttpException('NO_REFRESH_TOKEN_PROVIDED', 'No refresh token provided', 'ERROR_NO_REFRESH_TOKEN_PROVIDED', HttpStatus.UNAUTHORIZED);
-    const { accessToken } = await this.authService.refreshToken(refreshToken);
-    return { success: true, data: { accessToken: accessToken }, messageKey: 'SUCCESS_TOKEN_REFRESHED' };
+    const response: RefreshTokenResponseDto = await this.authService.refreshToken(refreshToken);
+    return { success: true, data: response, messageKey: 'SUCCESS_TOKEN_REFRESHED' };
   }
 
   @Post('send-password-reset-email')
-  async sendPasswordResetEmail(@Body('email') email: string) {
-    await this.authService.sendPasswordResetEmail(email);
+  async sendPasswordResetEmail(@Body() sendPasswordResetEmailRequestDto: SendPasswordResetEmailRequestDto): Promise<{ success: boolean, messageKey: string }> {
+    await this.authService.sendPasswordResetEmail(sendPasswordResetEmailRequestDto.email);
     return { success: true, messageKey: 'SUCCESS_PASSWORD_RESET_EMAIL_SENT' };
   }
 
   @Post('reset-password')
-  async resetPassword(@Body('token') token: string, @Body('password') password: string) {
-    await this.authService.resetPassword(token, password);
+  async resetPassword(@Body() passwordResetRequestDto: ResetPasswordRequestDto): Promise<{ success: boolean, messageKey: string }> {
+    await this.authService.resetPassword(passwordResetRequestDto.token, passwordResetRequestDto.password);
     return { success: true, messageKey: 'SUCCESS_PASSWORD_RESET' };
   }
 

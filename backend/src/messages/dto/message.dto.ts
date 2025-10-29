@@ -1,28 +1,9 @@
-import { IsBoolean, IsNotEmpty, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { IsNotEmpty, IsUUID, MaxLength } from "class-validator";
+import { IsString } from "class-validator";
+import { IsDateString } from "class-validator";
+import { IsBoolean } from "class-validator";
 
-export class CreateMessageDto {
-  @IsUUID(4, { message: 'Chat ID must be a valid UUID' })
-  @IsNotEmpty({ message: 'Chat ID is required' })
-  chatId: string;
-
-  @IsUUID(4, { message: 'Sender ID must be a valid UUID' })
-  @IsNotEmpty({ message: 'Sender ID is required' })
-  senderId: string;
-
-  @IsString({ message: 'Content must be a string' })
-  @IsNotEmpty({ message: 'Content is required' })
-  @MinLength(1, { message: 'Content cannot be empty' })
-  @MaxLength(1000, { message: 'Content cannot exceed 1000 characters' })
-  content: string;
-}
-
-export class ReadMessageDto {
-  @IsUUID(4, { message: 'Message ID must be a valid UUID' })
-  @IsNotEmpty({ message: 'Message ID is required' })
-  messageId: string;
-}
-
-export class MessageResponseDto {
+export class MessageDto {
   @IsUUID(4, { message: 'ID must be a valid UUID' })
   @IsNotEmpty({ message: 'ID is required' })
   id: string;
@@ -37,9 +18,10 @@ export class MessageResponseDto {
 
   @IsString({ message: 'Content must be a string' })
   @IsNotEmpty({ message: 'Content is required' })
+  @MaxLength(1000, { message: 'Content cannot exceed 1000 characters' })
   content: string;
 
-  @IsString({ message: 'Created at must be a string' })
+  @IsDateString({}, { message: 'Created at must be a valid ISO 8601 date string' })
   @IsNotEmpty({ message: 'Created at is required' })
   createdAt: string;
 

@@ -1,65 +1,35 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
-import { CreateUserDto } from '../dto/create-user.dto';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
-import { Gender, SexualOrientation } from '../enums/user.enums';
 import { UserPreviewDto } from '../dto/user-preview.dto';
-
-export interface UserPhoto {
-  id: string;
-  url: string;
-  is_main: boolean;
-}
-
-export interface UserInterest {
-  id: string;
-  name: string;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  is_email_verified: boolean;
-  first_name: string;
-  last_name: string;
-  gender: Gender | null;
-  sexual_orientation: SexualOrientation | null;
-  biography: string | null;
-  fame_rating: number;
-  latitude: number | null;
-  longitude: number | null;
-  last_time_active: Date | null;
-  password_hash: string;
-  created_at: Date;
-  updated_at: Date;
-  photos: UserPhoto[];
-  interests: UserInterest[];
-}
+import { PrivateUserDto } from '../dto/user.dto';
+import { UpdateProfileRequestDto } from '../dto/update-profile/update-profile-request.dto';
+import { UpdateProfileResponseDto } from '../dto/update-profile/update-profile-response.dto';
+import { CreateUserRequestDto } from '../dto/create-user/create-user-request.dto';
 
 const USER_BASE_QUERY = `
   SELECT 
-    u.id,
-    u.username,
-    u.email,
-    u.is_email_verified,
-    u.password_hash,
-    u.first_name,
-    u.last_name,
-    u.gender,
-    u.sexual_orientation,
-    u.biography,
-    u.fame_rating,
-    u.latitude,
-    u.longitude,
-    u.last_time_active,
-    u.created_at,
-    u.updated_at,
+    u.id AS "id",
+    u.username AS "username",
+    u.email AS "email",
+    u.is_email_verified AS "isEmailVerified",
+    u.password_hash AS "passwordHash",
+    u.first_name AS "firstName",
+    u.last_name AS "lastName",
+    u.gender AS "gender",
+    u.sexual_orientation AS "sexualOrientation",
+    u.biography AS "biography",
+    u.fame_rating AS "fameRating",
+    u.latitude AS "latitude",
+    u.longitude AS "longitude",
+    u.last_time_active AS "lastTimeActive",
+    u.created_at AS "createdAt",
+    u.updated_at AS "updatedAt",
     COALESCE(
       jsonb_agg(DISTINCT jsonb_build_object(
         'id', up.id,
         'url', up.url,
-        'is_profile_pic', up.is_profile_pic
+        'isProfilePic', up.is_profile_pic
       )) FILTER (WHERE up.id IS NOT NULL),
       '[]'::jsonb
     ) AS photos,
@@ -80,9 +50,20 @@ const USER_BASE_QUERY = `
 export class UsersRepository {
   constructor(private readonly db: DatabaseService) { }
 
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string): Promise<PrivateUserDto> {
     try {
-      const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.id = $1 GROUP BY u.id`, [id]);
+      const result = await this.db.query<PrivateUserDto>(`${USER_BASE_QUERY} WHERE u.id = $1 GROUP BY u.id`, [id]);
+      if (!result.rows[0]) throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.BAD_REQUEST);
+      return result.rows[0];
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async findByUsername(username: string): Promise<PrivateUserDto | null> {
+    try {
+      const result = await this.db.query<PrivateUserDto>(`${USER_BASE_QUERY} WHERE u.username = $1 GROUP BY u.id`, [username]);
       return result.rows[0] || null;
     } catch (error) {
       console.error(error);
@@ -90,9 +71,9 @@ export class UsersRepository {
     }
   }
 
-  async findByUsername(username: string): Promise<User | null> {
+  async findByEmail(email: string): Promise<PrivateUserDto | null> {
     try {
-      const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.username = $1 GROUP BY u.id`, [username]);
+      const result = await this.db.query<PrivateUserDto>(`${USER_BASE_QUERY} WHERE u.email = $1 GROUP BY u.id`, [email]);
       return result.rows[0] || null;
     } catch (error) {
       console.error(error);
@@ -100,9 +81,9 @@ export class UsersRepository {
     }
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmailOrUsername(email: string, username: string): Promise<PrivateUserDto | null> {
     try {
-      const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.email = $1 GROUP BY u.id`, [email]);
+      const result = await this.db.query<PrivateUserDto>(`${USER_BASE_QUERY} WHERE u.email = $1 OR u.username = $2 GROUP BY u.id`, [email, username]);
       return result.rows[0] || null;
     } catch (error) {
       console.error(error);
@@ -110,27 +91,15 @@ export class UsersRepository {
     }
   }
 
-  async findByEmailOrUsername(email: string, username: string): Promise<User | null> {
-    try {
-      const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.email = $1 OR u.username = $2 GROUP BY u.id`, [email, username]);
-      return result.rows[0] || null;
-    } catch (error) {
-      console.error(error);
-      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const { email, password, firstName, lastName, username } = createUserDto;
-
+  async create(createUserDto: CreateUserRequestDto & { passwordHash: string }): Promise<PrivateUserDto> {
     try {
       const query = `
       INSERT INTO users(email, password_hash, first_name, last_name, username) 
       VALUES ($1, $2, $3, $4, $5) 
       RETURNING *`;
 
-      const params = [email, password, firstName, lastName, username];
-      const result = await this.db.query<User>(query, params);
+      const params = [createUserDto.email, createUserDto.passwordHash, createUserDto.firstName, createUserDto.lastName, createUserDto.username];
+      const result = await this.db.query<PrivateUserDto>(query, params);
 
       return result.rows[0];
     } catch (error) {
@@ -159,13 +128,7 @@ export class UsersRepository {
     }
   }
 
-  async updateProfile(userId: string, updates: Partial<{
-    firstName: string;
-    lastName: string;
-    gender: Gender;
-    sexualOrientation: SexualOrientation;
-    biography: string;
-  }>): Promise<User> {
+  async updateProfile(userId: string, updates: UpdateProfileRequestDto): Promise<UpdateProfileResponseDto> {
     const fields: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
@@ -205,9 +168,25 @@ export class UsersRepository {
         WHERE id = $${paramIndex}
         RETURNING *
       )
-      SELECT u.*,
+      SELECT
+        id as "id",
+        username as "username",
+        email as "email",
+        is_email_verified AS "isEmailVerified",
+        password_hash AS "passwordHash",
+        first_name AS "firstName",
+        last_name AS "lastName",
+        gender as "gender",
+        sexual_orientation AS "sexualOrientation",
+        biography as "biography",
+        fame_rating AS "fameRating",
+        latitude as "latitude",
+        longitude as "longitude",
+        last_time_active AS "lastTimeActive",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt",
         COALESCE(
-          (SELECT jsonb_agg(jsonb_build_object('id', up.id, 'url', up.url, 'is_profile_pic', up.is_profile_pic))
+          (SELECT jsonb_agg(jsonb_build_object('id', up.id, 'url', up.url, 'isProfilePic', up.is_profile_pic))
             FROM user_photos up
             WHERE up.user_id = u.id),
           '[]'::jsonb
@@ -223,7 +202,7 @@ export class UsersRepository {
     `;
 
     try {
-      const result = await this.db.query<User>(query, values);
+      const result = await this.db.query<PrivateUserDto>(query, values);
       if (!result) {
         throw new CustomHttpException(
           'USER_NOT_FOUND',
@@ -232,7 +211,7 @@ export class UsersRepository {
           HttpStatus.NOT_FOUND
         );
       }
-      return result.rows[0];
+      return { user: result.rows[0] };
     } catch (error) {
       console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -261,6 +240,16 @@ export class UsersRepository {
         lastName: row.last_name,
         profilePicture: row.profile_picture,
       }));
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getPasswordHashByUsername(username: string): Promise<string | null> {
+    try {
+      const result = await this.db.query<{ password_hash: string }>(`SELECT password_hash FROM users WHERE username = $1`, [username]);
+      return result.rows[0]?.password_hash || null;
     } catch (error) {
       console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
