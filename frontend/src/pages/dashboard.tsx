@@ -14,6 +14,7 @@ import {
   MessageCircle,
   MapPin,
 } from "lucide-react";
+import { Confetti } from "@/components/ui/confetti"
 
 function UserHasCompletedProfile(user: User): boolean {
   // TODO: Add photos and interests check when backend endpoints are ready
@@ -166,6 +167,7 @@ export function Dashboard() {
             </Card>
           </div>
         </div>
+        <Confetti />
       </AppLayout>
     );
   }

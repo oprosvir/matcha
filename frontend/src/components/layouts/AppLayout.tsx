@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { NotificationMenu } from "../ui/notification-bell";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useUnreadMessagesCount } from "@/hooks/useUnreadMessagesCount";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { data: notifications } = useNotifications();
+  const { data: unreadMessagesCount } = useUnreadMessagesCount();
 
   const handleSignOut = async () => {
     await signOut();
@@ -72,6 +74,11 @@ export function AppLayout({ children }: AppLayoutProps) {
                     >
                       <Icon className="w-4 h-4" />
                       {link.label}
+                      {link.path === "/chat" && unreadMessagesCount > 0 && (
+                        <Badge className="ml-1 text-[10px] bg-blue-500">
+                          {unreadMessagesCount}
+                        </Badge>
+                      )}
                       {link.disabled && (
                         <Badge variant="secondary" className="ml-1 text-[10px]">
                           Soon
@@ -139,7 +146,14 @@ export function AppLayout({ children }: AppLayoutProps) {
                     : "text-foreground hover:text-primary"
                 } ${link.disabled ? "pointer-events-none" : ""}`}
               >
-                <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
+                <div className="relative">
+                  <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
+                  {link.path === "/chat" && unreadMessagesCount > 0 && (
+                    <span className="absolute -top-1 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-blue-500 text-blue-500-foreground text-white rounded-full">
+                      {unreadMessagesCount}
+                    </span>
+                  )}
+                </div>
                 <span
                   className={`text-[10px] ${
                     isActive ? "font-semibold" : "font-medium"

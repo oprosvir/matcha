@@ -4,9 +4,10 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send } from "lucide-react";
+import { Send, ArrowLeft } from "lucide-react";
 import { useConversations } from "@/hooks/useConversations";
 import type { Conversation } from "@/types/chat";
 import { useMessages } from "@/hooks/useMessages";
@@ -22,27 +23,72 @@ function ConversationCardContent({
     conversation.chatId
   );
   const [messageContent, setMessageContent] = useState("");
-  const { sendMessage, isWebSocketConnected, joinChat, leaveChat } = useChat();
+  const { sendMessage, isWebSocketConnected, readMessages } = useChat();
   const { user, isUserLoading } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isWebSocketConnected) {
-      joinChat(conversation.chatId);
-    }
-
-    return () => {
-      if (isWebSocketConnected) {
-        leaveChat(conversation.chatId);
-      }
-    };
-  }, [conversation.chatId, isWebSocketConnected, joinChat, leaveChat]);
+  const observedMessageIdsRef = useRef<Set<string>>(new Set());
+  const messageElementsRef = useRef<Map<string, HTMLDivElement>>(new Map());
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView();
     }
-  }, [messages, conversation.chatId]); // When messages change or conversation changes, scroll to bottom
+  }, [messages, conversation.chatId]);
+
+  useEffect(() => {
+    if (!messages || !user?.id) return;
+
+    // Observing which messages are visible to the user
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const newlyVisible: string[] = [];
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.target instanceof HTMLDivElement) {
+            const id = entry.target.dataset.messageId;
+            const read = entry.target.dataset.read === "true";
+            if (id && !observedMessageIdsRef.current.has(id) && !read) {
+              observedMessageIdsRef.current.add(id);
+              newlyVisible.push(id);
+            }
+          }
+        }
+        if (newlyVisible.length > 0) {
+          readMessages(newlyVisible); // Websocket event to mark messages as read on the server
+          // Decrement unread badge on the client
+          queryClient.setQueryData(
+            ["unreadMessagesCount"],
+            (oldData: number | undefined) => {
+              const current = oldData ?? 0;
+              const next = current - newlyVisible.length;
+              return next > 0 ? next : 0;
+            }
+          );
+          // Mark messages as read on the client
+          queryClient.setQueryData(
+            ["messages", conversation.chatId],
+            (oldData: any) => {
+              if (!Array.isArray(oldData)) return oldData;
+              const idSet = new Set(newlyVisible);
+              return oldData.map((m: any) =>
+                idSet.has(m.id) ? { ...m, read: true } : m
+              );
+            }
+          );
+        }
+      },
+      { threshold: 0.6 }
+    );
+
+    for (const msg of messages) {
+      if (msg.senderId !== user.id) {
+        const el = messageElementsRef.current.get(msg.id);
+        if (el) observer.observe(el);
+      }
+    }
+
+    return () => observer.disconnect();
+  }, [messages, user?.id, readMessages]);
 
   const handleSendMessage = () => {
     if (messageContent.trim() && isWebSocketConnected) {
@@ -80,6 +126,15 @@ function ConversationCardContent({
             {messages?.map((msg) => (
               <div
                 key={msg.id}
+                data-message-id={msg.id}
+                data-read={Boolean((msg as any).read)}
+                ref={(el) => {
+                  if (el) {
+                    messageElementsRef.current.set(msg.id, el);
+                  } else {
+                    messageElementsRef.current.delete(msg.id);
+                  }
+                }}
                 className={`flex ${
                   msg.senderId === user?.id ? "justify-end" : "justify-start"
                 }`}
@@ -138,10 +193,21 @@ function ConversationCardContent({
 }
 
 export function Chat() {
+  const queryClient = useQueryClient();
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
   const { data: conversations, isLoading: conversationsLoading } =
     useConversations();
+
+  useEffect(() => {
+    queryClient.setQueryData(
+      ["activeChatId"],
+      selectedConversation?.chatId ?? null
+    );
+    return () => {
+      queryClient.setQueryData(["activeChatId"], null);
+    };
+  }, [selectedConversation, queryClient]);
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -149,9 +215,13 @@ export function Chat() {
 
   return (
     <AppLayout>
-      <div className="flex flex-row gap-6 h-full">
+      <div className="flex flex-col md:flex-row gap-6 h-full">
         {/* Matches Sidebar */}
-        <Card className="flex flex-col w-1/4 h-[calc(100vh-10rem)]">
+        <Card
+          className={`flex flex-col w-full md:w-1/4 h-[calc(100vh-10rem)] ${
+            selectedConversation ? "hidden md:flex" : "flex"
+          }`}
+        >
           <CardContent className="overflow-y-auto p-0 h-full">
             {conversationsLoading ? (
               <div className="p-4 space-y-2">
@@ -184,7 +254,10 @@ export function Chat() {
                       <div className="relative">
                         <Avatar className="h-10 w-10">
                           <AvatarImage
-                            src={conversation.profilePreview.profilePicture}
+                            src={
+                              conversation.profilePreview.profilePicture ||
+                              undefined
+                            }
                             alt={`${conversation.profilePreview.firstName} ${conversation.profilePreview.lastName}`}
                           />
                           <AvatarFallback>
@@ -219,16 +292,31 @@ export function Chat() {
         </Card>
 
         {/* Chat Area */}
-        <Card className="w-3/4 flex flex-col p-0 max-h-[calc(100vh-10rem)]">
+        <Card
+          className={`w-full md:w-3/4 flex flex-col p-0 max-h-[calc(100vh-10rem)] ${
+            selectedConversation ? "flex" : "hidden md:flex"
+          }`}
+        >
           {selectedConversation ? (
             <>
               {/* Chat Header */}
               <CardHeader className="border-b flex items-center pt-6">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center space-x-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="md:hidden mr-1"
+                      onClick={() => setSelectedConversation(null)}
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
                     <Avatar className="h-10 w-10">
                       <AvatarImage
-                        src={selectedConversation.profilePreview.profilePicture}
+                        src={
+                          selectedConversation.profilePreview.profilePicture ||
+                          undefined
+                        }
                         alt={`${selectedConversation.profilePreview.firstName} ${selectedConversation.profilePreview.lastName}`}
                       />
                       <AvatarFallback>

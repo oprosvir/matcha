@@ -63,6 +63,10 @@ export type NotificationEvent = NotificationLike | NotificationMatch | Notificat
 export class NotificationService {
   constructor(private readonly notificationRepository: NotificationRepository, private readonly usersRepository: UsersRepository, private readonly webSocketEmitter: WebSocketEmitter) { }
 
+  private sendNotificationToUser(userId: string, notificationEvent: NotificationEvent): void {
+    this.webSocketEmitter.emitToUser(userId, notificationEvent.type, notificationEvent);
+  }
+
   private async getNotificationEventContent(notification: CreateNotificationResponseDto): Promise<NotificationEvent> {
     const sourceUser = await this.usersRepository.findById(notification.sourceUserId);
     if (!sourceUser) {
@@ -125,7 +129,7 @@ export class NotificationService {
   async createNotification(createNotificationRequestDto: CreateNotificationRequestDto): Promise<CreateNotificationResponseDto> {
     const newNotification = await this.notificationRepository.createNotification(createNotificationRequestDto);
     const notificationEvent: NotificationEvent = await this.getNotificationEventContent(newNotification);
-    this.webSocketEmitter.emitToUser(createNotificationRequestDto.userId, notificationEvent.type, notificationEvent.payload);
+    this.sendNotificationToUser(createNotificationRequestDto.userId, notificationEvent);
     return newNotification;
   }
 

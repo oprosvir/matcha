@@ -6,7 +6,7 @@ export const MessageSchema = z.object({
   chatId: z.string(),
   senderId: z.string(),
   content: z.string(),
-  isRead: z.boolean(),
+  read: z.boolean().optional().default(false),
   createdAt: z.string().transform((str) => new Date(str)),
 });
 export type Message = z.infer<typeof MessageSchema>;

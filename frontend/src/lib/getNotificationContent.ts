@@ -16,12 +16,12 @@ export function getNotificationTitle(notification: Notification) {
 export function getNotificationDetails(notification: Notification) {
   switch (notification.type) {
     case NotificationType.LIKE:
-      return `You have a new like from ${notification.payload.fromUserFirstName} ${notification.payload.fromUserLastName}`;
+      return `${notification.payload.fromUserFirstName} ${notification.payload.fromUserLastName} has liked your profile 💖`;
     case NotificationType.MATCH:
-      return `You have a new match with ${notification.payload.withUserFirstName} ${notification.payload.withUserLastName}`;
+      return `You have a new match with ${notification.payload.withUserFirstName} ${notification.payload.withUserLastName} 💑`;
     case NotificationType.VIEW:
-      return `You have a new view from ${notification.payload.viewerUserFirstName} ${notification.payload.viewerUserLastName}`;
+      return `${notification.payload.viewerUserFirstName} ${notification.payload.viewerUserLastName} has viewed your profile 👀`;
     case NotificationType.UNLIKE:
-      return `You have a new unlike from ${notification.payload.fromUserFirstName} ${notification.payload.fromUserLastName}`;
+      return `${notification.payload.fromUserFirstName} ${notification.payload.fromUserLastName} has unliked you 💔`;
   }
 }

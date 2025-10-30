@@ -7,6 +7,7 @@ import { MessagesSchema } from '@/types/chat';
 import { z } from 'zod';
 
 const FindAllByChatIdResponseSchema = z.object({ messages: MessagesSchema });
+const UnreadCountResponseSchema = z.object({ count: z.number() });
 
 export const messageApi = {
   findAllByChatId: async (chatId: string): Promise<Messages> => {
@@ -15,5 +16,15 @@ export const messageApi = {
       throw new Error(getToastMessage(response.messageKey));
     }
     return response.data.messages;
+  },
+  getUnreadCount: async (): Promise<number> => {
+    const response = await parseApiResponse(
+      apiClient.get(`/messages/unread/count`),
+      createApiResponseSchema(UnreadCountResponseSchema)
+    );
+    if (!response.success) {
+      throw new Error(getToastMessage(response.messageKey));
+    }
+    return response.data.count;
   },
 };

@@ -61,23 +61,29 @@ export function NotificationMenu({
           <>
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {notifications.map((notification) => (
-              <DropdownMenuItem key={notification.id}>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">
-                    {getNotificationTitle(notification)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {getNotificationDetails(notification)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(notification.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </p>
-                </div>
-              </DropdownMenuItem>
-            ))}
+            {notifications
+              .sort(
+                (a: Notification, b: Notification) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+              )
+              .map((notification) => (
+                <DropdownMenuItem key={notification.id}>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">
+                      {getNotificationTitle(notification)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {getNotificationDetails(notification)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(notification.createdAt), {
+                        addSuffix: true,
+                      })}
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+              ))}
           </>
         ) : (
           <DropdownMenuItem>

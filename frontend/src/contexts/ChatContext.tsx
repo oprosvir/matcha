@@ -7,9 +7,8 @@ import type { Socket } from "socket.io-client";
 interface ChatContextType {
   socket: Socket | null;
   isWebSocketConnected: boolean;
-  joinChat: (chatId: string) => void;
-  leaveChat: (chatId: string) => void;
   sendMessage: (chatId: string, content: string) => void;
+  readMessages: (messageIds: string[]) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -19,9 +18,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const {
     socket,
     isConnected: isWebSocketConnected,
-    joinChat,
-    leaveChat,
     sendMessage: sendMessageWS,
+    readMessages: readMessagesWS,
   } = useWebSocket(isAuthenticated);
 
   const sendMessage = useCallback(
@@ -36,9 +34,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       value={{
         socket,
         isWebSocketConnected,
-        joinChat,
-        leaveChat,
         sendMessage,
+        readMessages: readMessagesWS,
       }}
     >
       {children}

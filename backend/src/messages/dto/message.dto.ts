@@ -1,7 +1,6 @@
-import { IsNotEmpty, IsUUID, MaxLength } from "class-validator";
+import { IsNotEmpty, IsUUID, MaxLength, IsBoolean } from "class-validator";
 import { IsString } from "class-validator";
 import { IsDateString } from "class-validator";
-import { IsBoolean } from "class-validator";
 
 export class MessageDto {
   @IsUUID(4, { message: 'ID must be a valid UUID' })
@@ -21,11 +20,11 @@ export class MessageDto {
   @MaxLength(1000, { message: 'Content cannot exceed 1000 characters' })
   content: string;
 
+  @IsBoolean({ message: 'Read must be a boolean' })
+  @IsNotEmpty({ message: 'Read is required' })
+  read: boolean;
+
   @IsDateString({}, { message: 'Created at must be a valid ISO 8601 date string' })
   @IsNotEmpty({ message: 'Created at is required' })
   createdAt: string;
-
-  @IsBoolean({ message: 'Is read must be a boolean' })
-  @IsNotEmpty({ message: 'Is read is required' })
-  isRead: boolean;
 }

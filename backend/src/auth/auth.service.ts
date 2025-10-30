@@ -12,10 +12,17 @@ import { RefreshTokenResponseDto } from './dto/refresh-token/refresh-token-respo
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userService: UserService, private readonly authRepository: AuthRepository) { }
-
-  private readonly ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
-  private readonly REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
+  constructor(private readonly userService: UserService, private readonly authRepository: AuthRepository) {
+    const access = process.env.ACCESS_TOKEN_SECRET;
+    const refresh = process.env.REFRESH_TOKEN_SECRET;
+    if (!access || !refresh) {
+      throw new Error('JWT secrets not configured (ACCESS_TOKEN_SECRET/REFRESH_TOKEN_SECRET)');
+    }
+    this.ACCESS_TOKEN_SECRET = access;
+    this.REFRESH_TOKEN_SECRET = refresh;
+  }
+  private readonly ACCESS_TOKEN_SECRET: string;
+  private readonly REFRESH_TOKEN_SECRET: string;
   private readonly resend = new Resend(process.env.RESEND_API_KEY);
 
   private generateAccessToken(user: { id: string, email: string }): string {
