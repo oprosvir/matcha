@@ -15,6 +15,7 @@ export type UserRow = {
   fameRating: number;
   location: string;
   interests: Interest[];
+  liked: boolean;
 };
 
 export const columns: ColumnDef<UserRow>[] = [
@@ -46,6 +47,12 @@ export const columns: ColumnDef<UserRow>[] = [
   {
     accessorKey: "age",
     header: "Age",
+    filterFn: (row, id, filterValue) => {
+      if (!filterValue) return true;
+      const { from, to } = filterValue as { from: number; to: number };
+      const value = row.getValue(id) as number;
+      return value >= from && value <= to;
+    },
   },
   {
     accessorKey: "fameRating",
@@ -53,10 +60,24 @@ export const columns: ColumnDef<UserRow>[] = [
     cell: ({ row }) => {
       return <div>{`${row.original.fameRating} ⭐`}</div>;
     },
+    filterFn: (row, id, filterValue) => {
+      if (!filterValue) return true;
+      const { from, to } = filterValue as { from: number; to: number };
+      const value = row.getValue(id) as number;
+      return value >= from && value <= to;
+    },
   },
   {
     accessorKey: "location",
     header: "Location",
+    filterFn: (row, id, filterValue) => {
+      if (!filterValue) return true;
+      const value = row.getValue(id) as string;
+      const filterStrings = filterValue as string[];
+      return filterStrings.some((filterStr) =>
+        value.toLowerCase().includes(filterStr.toLowerCase())
+      );
+    },
   },
   {
     accessorKey: "interests",
@@ -72,6 +93,16 @@ export const columns: ColumnDef<UserRow>[] = [
         </div>
       );
     },
+    filterFn: (row, id, filterValue) => {
+      if (!filterValue || !Array.isArray(filterValue)) return true;
+      const interests: Interest[] = row.getValue(id);
+      const filterStrings: string[] = filterValue;
+      return interests.some((interest) =>
+        filterStrings.some(
+          (filterStr) => interest.name.toLowerCase() === filterStr.toLowerCase()
+        )
+      );
+    },
   },
   {
     id: "actions",
@@ -79,9 +110,12 @@ export const columns: ColumnDef<UserRow>[] = [
       return (
         <div className="flex gap-2">
           <Toggle
+            onPressedChange={(pressed: boolean) => {
+              row.original.liked = !row.original.liked;
+            }}
+            pressed={row.original.liked}
             variant="outline"
             className="data-[state=on]:bg-red-400 data-[state=on]:text-white transition-colors duration-200"
-            onClick={() => console.log("thumbs up on user", row.original.id)}
           >
             <Heart className="w-4 h-4" />
           </Toggle>

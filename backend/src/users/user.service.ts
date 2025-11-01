@@ -13,6 +13,44 @@ import { UpdateProfileResponseDto } from './dto/update-profile/update-profile-re
 import { FindAllMatchesResponseDto } from './dto/find-all-matches/find-all-matches-response.dto';
 import { NotificationService } from 'src/notifications/notification.service';
 import { NotificationType } from 'src/common/enums/notification-type';
+import { z } from 'zod';
+
+const ResolveCityNameAndCountryNameByLatitudeAndLongitudeResponseSchema = z.object({
+  cityName: z.string(),
+  countryName: z.string(),
+});
+
+const IPAPIResponseSchema = z.discriminatedUnion('status', [
+  z.object({
+    status: z.literal('success'),
+    lon: z.number().nullable(),
+    lat: z.number().nullable(),
+  }),
+  z.object({
+    status: z.literal('fail'),
+    message: z.string(),
+  }),
+]);
+
+const NominatimResponseSchema = z.object({
+  address: z.object({
+    city: z.string().nullable().optional(),
+    town: z.string().nullable().optional(),
+    village: z.string().nullable().optional(),
+    municipality: z.string().nullable().optional(),
+    suburb: z.string().nullable().optional(),
+    county: z.string().nullable().optional(),
+    state_district: z.string().nullable().optional(),
+    country: z.string().nullable(),
+  }),
+});
+
+const NominatimSearchResponseSchema = z.array(
+  z.object({
+    lat: z.string(),
+    lon: z.string(),
+  })
+);
 
 @Injectable()
 export class UserService {
@@ -33,7 +71,128 @@ export class UserService {
       createdAt: user.createdAt,
       interests: user.interests,
       photos: user.photos,
+      cityName: user.cityName,
+      countryName: user.countryName,
     };
+  }
+
+  async resolveCityNameAndCountryNameByLatitudeAndLongitude(latitude: number, longitude: number): Promise<{ cityName: string, countryName: string }> {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1`
+      );
+      if (!response.ok) {
+        console.error(response);
+        throw new CustomHttpException(
+          'FAILED_TO_RESOLVE_LOCATION',
+          `Failed to resolve location for latitude: ${latitude} and longitude: ${longitude}`,
+          'ERROR_FAILED_TO_RESOLVE_LOCATION',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      const data = await response.json();
+      const validatedData = NominatimResponseSchema.safeParse(data);
+      if (!validatedData.success || !validatedData.data.address.country) {
+        console.error(validatedData);
+        throw new CustomHttpException(
+          'FAILED_TO_RESOLVE_LOCATION',
+          `Failed to resolve location for latitude: ${latitude} and longitude: ${longitude}`,
+          'ERROR_FAILED_TO_RESOLVE_LOCATION',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      const address = validatedData.data.address;
+      const cityName =
+        address.city ||
+        address.town ||
+        address.village ||
+        address.municipality ||
+        address.suburb;
+      if (!cityName) {
+        console.error('No city name found in address:', address);
+        throw new CustomHttpException(
+          'FAILED_TO_RESOLVE_LOCATION',
+          `Failed to resolve city name for latitude: ${latitude} and longitude: ${longitude}`,
+          'ERROR_FAILED_TO_RESOLVE_LOCATION',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      if (!address.country) {
+        console.error('No country name found in address:', address);
+        throw new CustomHttpException(
+          'FAILED_TO_RESOLVE_LOCATION',
+          `Failed to resolve country name for latitude: ${latitude} and longitude: ${longitude}`,
+          'ERROR_FAILED_TO_RESOLVE_LOCATION',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      return { cityName, countryName: address.country };
+    } catch (error) {
+      console.error(error);
+      if (error instanceof CustomHttpException) {
+        throw error;
+      }
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async resolveLongitudeAndLatitudeByCityNameAndCountryName(cityName: string, countryName: string): Promise<{ longitude: number, latitude: number }> {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?city=${cityName}&country=${countryName}&format=json&limit=1`
+      );
+      if (!response.ok) {
+        console.error(response);
+        throw new CustomHttpException(
+          'FAILED_TO_RESOLVE_LOCATION',
+          `Failed to resolve location for city: ${cityName} and country: ${countryName}`,
+          'ERROR_FAILED_TO_RESOLVE_LOCATION',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      const data = await response.json();
+      const validatedData = NominatimSearchResponseSchema.safeParse(data);
+      if (!validatedData.success || validatedData.data.length === 0 || !validatedData.data[0].lat || !validatedData.data[0].lon) {
+        throw new CustomHttpException(
+          'FAILED_TO_RESOLVE_LOCATION',
+          `Failed to resolve location for city: ${cityName} and country: ${countryName}`,
+          'ERROR_FAILED_TO_RESOLVE_LOCATION',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      return { longitude: parseFloat(validatedData.data[0].lon), latitude: parseFloat(validatedData.data[0].lat) };
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async resolveLongitudeAndLatitudeByIPAddress(ipAddress: string): Promise<{ longitude: number, latitude: number }> {
+    try {
+      const response = await fetch(`http://ip-api.com/json/${ipAddress}`);
+      if (!response.ok) {
+        console.error(response);
+        throw new CustomHttpException('FAILED_TO_RESOLVE_LOCATION', `Failed to resolve location for IP address: ${ipAddress}`, 'ERROR_FAILED_TO_RESOLVE_LOCATION', HttpStatus.BAD_REQUEST);
+      }
+      const data = await response.json();
+      const validatedData = IPAPIResponseSchema.safeParse(data);
+      if (!validatedData.success) {
+        console.error('Failed to parse IP-API response:', validatedData.error);
+        throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+      if (validatedData.data.status === 'fail') {
+        console.log(`Failed to resolve location for IP address: ${validatedData.data.message || 'Unknown error'}`);
+        throw new CustomHttpException('FAILED_TO_RESOLVE_LOCATION', `Failed to resolve location for IP address: ${validatedData.data.message || 'Unknown error'}`, 'ERROR_FAILED_TO_RESOLVE_LOCATION', HttpStatus.BAD_REQUEST);
+      }
+      if (!validatedData.data.lon || !validatedData.data.lat) {
+        console.log('IP-API returned a response with no longitude or latitude');
+        throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+      return { longitude: validatedData.data.lon, latitude: validatedData.data.lat };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 
   async findPublicProfileById(id: string): Promise<PublicUserDto | null> {
@@ -132,6 +291,14 @@ export class UserService {
   async unLikeUser(fromUserId: string, toUserId: string): Promise<void> {
     await this.likesRepository.unLikeUser(fromUserId, toUserId);
     await this.notificationService.createNotification({ userId: toUserId, type: NotificationType.UNLIKE, sourceUserId: fromUserId });
+  }
+
+  async getCityNameByUserId(userId: string): Promise<string> {
+    return await this.usersRepository.getCityNameByUserId(userId);
+  }
+
+  async getCountryNameByUserId(userId: string): Promise<string> {
+    return await this.usersRepository.getCountryNameByUserId(userId);
   }
 }
 

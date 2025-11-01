@@ -8,7 +8,6 @@ import {
   Search,
   MessageCircle,
   type LucideIcon,
-  Users,
 } from "lucide-react";
 import { NotificationMenu } from "../ui/notification-bell";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -38,12 +37,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   }> = [
     { path: "/", label: "Dashboard", icon: Home },
     { path: "/profile", label: "Profile", icon: User },
-    {
-      path: "/suggestions",
-      label: "Suggestions",
-      icon: Users,
-      disabled: true,
-    },
     { path: "/browse", label: "Browse", icon: Search, disabled: false },
     { path: "/chat", label: "Chat", icon: MessageCircle, disabled: false },
   ];

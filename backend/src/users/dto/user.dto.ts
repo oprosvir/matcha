@@ -71,6 +71,14 @@ export class PublicUserDto {
 
   @IsArray({ message: 'Interests must be an array' })
   interests: UserInterestDto[];
+
+  @IsString({ message: 'City name must be a string' })
+  @IsNotEmpty({ message: 'City name is required' })
+  cityName: string | null;
+
+  @IsString({ message: 'Country name must be a string' })
+  @IsNotEmpty({ message: 'Country name is required' })
+  countryName: string | null;
 }
 
 export class PrivateUserDto extends PublicUserDto {

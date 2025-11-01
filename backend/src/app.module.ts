@@ -8,9 +8,10 @@ import { ChatModule } from './chat/chat.module';
 import { NotificationModule } from './notifications/notification.module';
 import { EventModule } from './event/event.module';
 import { MessagesModule } from './messages/message.module';
+import { UserModule } from './users/user.module';
 
 @Module({
-  imports: [AuthModule, DatabaseModule, InterestModule, ChatModule, NotificationModule, EventModule, MessagesModule],
+  imports: [AuthModule, DatabaseModule, InterestModule, ChatModule, NotificationModule, EventModule, MessagesModule, UserModule],
   controllers: [AppController],
   providers: [AppService],
 })

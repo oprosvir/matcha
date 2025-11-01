@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { CurrentUser } from 'src/auth/current-user.decorators';
@@ -42,5 +42,23 @@ export class UserController {
   async likeUser(@CurrentUser('sub') userId: string, @Body() likeUserRequestDto: LikeUserRequestDto) {
     await this.userService.likeUser(userId, likeUserRequestDto.userId);
     return { success: true, messageKey: 'SUCCESS_LIKE_USER' };
+  }
+
+  @Get('resolve-location-by-latitude-and-longitude')
+  async resolveLocationByLatitudeAndLongitude(@Query('latitude') latitude: number, @Query('longitude') longitude: number): Promise<{ success: boolean, data: { cityName: string, countryName: string }, messageKey: string }> {
+    const location: { cityName: string, countryName: string } = await this.userService.resolveCityNameAndCountryNameByLatitudeAndLongitude(latitude, longitude);
+    return { success: true, data: { cityName: location.cityName, countryName: location.countryName }, messageKey: 'SUCCESS_RESOLVE_LOCATION' };
+  }
+
+  @Get('resolve-location-by-city-name-and-country-name')
+  async resolveLocationByCityNameAndCountryName(@Query('cityName') cityName: string, @Query('countryName') countryName: string): Promise<{ success: boolean, data: { longitude: number, latitude: number }, messageKey: string }> {
+    const location: { longitude: number, latitude: number } = await this.userService.resolveLongitudeAndLatitudeByCityNameAndCountryName(cityName, countryName);
+    return { success: true, data: { longitude: location.longitude, latitude: location.latitude }, messageKey: 'SUCCESS_RESOLVE_LOCATION' };
+  }
+
+  @Get('resolve-location-by-ip-address')
+  async resolveLocationByIPAddress(@Query('ipAddress') ipAddress: string): Promise<{ success: boolean, data: { longitude: number, latitude: number }, messageKey: string }> {
+    const location: { longitude: number, latitude: number } = await this.userService.resolveLongitudeAndLatitudeByIPAddress(ipAddress);
+    return { success: true, data: { longitude: location.longitude, latitude: location.latitude }, messageKey: 'SUCCESS_RESOLVE_LOCATION' };
   }
 }

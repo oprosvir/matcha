@@ -1,7 +1,8 @@
-import { faker } from "@faker-js/faker";
+import { faker } from "@faker-js/faker/locale/en_US";
 import { Gender, SexualOrientation } from "../src/users/enums/user.enums";
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
+import cities from 'cities.json';
 
 interface RandomUser {
   id: string;
@@ -16,6 +17,8 @@ interface RandomUser {
   fameRating: number;
   latitude: number;
   longitude: number;
+  cityName: string;
+  countryName: string;
   lastTimeActive: Date;
   portraitUrl: string;
   interests: string[];
@@ -75,9 +78,40 @@ const interests = [
   ('#Running'),
   ('#Kayaking'),
   ('#ComedyShows')];
+
 const interestsIds = faker.helpers.uniqueArray(faker.string.uuid, interests.length);
 
+interface City {
+  name: string;
+  country: string;
+  lat: number;
+  lng: number;
+}
+
+interface CityFromJson {
+  name: string;
+  lat: string;
+  lng: string;
+  country: string;
+  admin1: string;
+  admin2: string;
+}
+
+const citiesArray = cities as unknown as CityFromJson[];
+
+function getRandomCity(): City {
+  const randomIndex = faker.number.int({ min: 0, max: citiesArray.length - 1 });
+  return {
+    name: citiesArray[randomIndex].name,
+    country: citiesArray[randomIndex].country,
+    lat: parseFloat(citiesArray[randomIndex].lat),
+    lng: parseFloat(citiesArray[randomIndex].lng),
+  };
+}
+
 function createRandomUser(): RandomUser {
+  const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+
   const id = faker.string.uuid();
   const password = faker.internet.password();
   const gender: Gender = faker.helpers.arrayElement([Gender.MALE, Gender.FEMALE]);
@@ -88,8 +122,21 @@ function createRandomUser(): RandomUser {
   const sexualOrientation: SexualOrientation = faker.helpers.arrayElement([SexualOrientation.STRAIGHT, SexualOrientation.GAY, SexualOrientation.BISEXUAL]);
   const biography = faker.lorem.paragraph();
   const fameRating = faker.number.int({ min: 0, max: 100 });
-  const latitude = faker.location.latitude({ min: -90, max: 90 });
-  const longitude = faker.location.longitude({ min: -180, max: 180 });
+  const city = getRandomCity();
+  let cityName = '';
+  let latitude = 0;
+  let longitude = 0;
+  let countryName = regionNames.of(city.country);
+  if (!countryName) {
+    cityName = 'New York';
+    countryName = 'United States';
+    latitude = 40.7128;
+    longitude = -74.0060;
+  } else {
+    cityName = city.name;
+    latitude = city.lat;
+    longitude = city.lng;
+  }
   const lastTimeActive = faker.date.recent();
   const portraitUrl = faker.image.personPortrait({ sex: gender, size: 512 });
   const interests = faker.helpers.uniqueArray(interestsIds, faker.number.int({ min: 1, max: interestsIds.length }));
@@ -107,6 +154,8 @@ function createRandomUser(): RandomUser {
     fameRating,
     latitude,
     longitude,
+    cityName,
+    countryName,
     lastTimeActive,
     portraitUrl,
     interests,
@@ -127,8 +176,8 @@ async function seedDatabase() {
     console.log('👤 Creating main test user...');
 
     await client.query(`
-      INSERT INTO users (id, username, email, is_email_verified, password_hash, first_name, last_name, gender, sexual_orientation, biography, fame_rating, latitude, longitude, last_time_active)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      INSERT INTO users (id, username, email, is_email_verified, password_hash, first_name, last_name, gender, sexual_orientation, biography, fame_rating, latitude, longitude, city_name, country_name, last_time_active)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
     `, [
       mainUserId,
       MAIN_USER_USERNAME,
@@ -143,6 +192,8 @@ async function seedDatabase() {
       85,
       40.7128,
       -74.0060,
+      'New York',
+      'United States',
       new Date()
     ]);
 
@@ -164,7 +215,7 @@ async function seedDatabase() {
       for (let j = i; j < batchEnd; j++) {
         const user = users[j];
         const passwordHash = await bcrypt.hash(user.password, 10);
-        values.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}, $${paramIndex + 6}, $${paramIndex + 7}, $${paramIndex + 8}, $${paramIndex + 9}, $${paramIndex + 10}, $${paramIndex + 11}, $${paramIndex + 12}, $${paramIndex + 13})`);
+        values.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}, $${paramIndex + 6}, $${paramIndex + 7}, $${paramIndex + 8}, $${paramIndex + 9}, $${paramIndex + 10}, $${paramIndex + 11}, $${paramIndex + 12}, $${paramIndex + 13}, $${paramIndex + 14}, $${paramIndex + 15})`);
 
         params.push(
           user.id,
@@ -180,13 +231,15 @@ async function seedDatabase() {
           user.fameRating,
           user.latitude,
           user.longitude,
+          user.cityName,
+          user.countryName,
           user.lastTimeActive
         );
-        paramIndex += 14;
+        paramIndex += 16;
       }
 
       const query = `
-        INSERT INTO users (id, username, email, is_email_verified, password_hash, first_name, last_name, gender, sexual_orientation, biography, fame_rating, latitude, longitude, last_time_active)
+        INSERT INTO users (id, username, email, is_email_verified, password_hash, first_name, last_name, gender, sexual_orientation, biography, fame_rating, latitude, longitude, city_name, country_name, last_time_active)
         VALUES ${values.join(', ')}
       `;
 

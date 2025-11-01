@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { useCallback, useState, useEffect, type ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -27,202 +27,17 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Field,
-  FieldContent,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-} from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { IconMinus, IconPlus } from "@tabler/icons-react";
-import { ButtonGroup } from "@/components/ui/button-group";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { X } from "lucide-react";
 import { DataTableFacetedFilter } from "@/components/ui/data-table-faceted-filter";
+import { DataTableRangeFilter } from "@/components/ui/data-table-faceted-range-filter";
+import { useInterests } from "@/hooks/useInterests";
+import type { Interest } from "@/types/user";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-}
-
-function RangeField({
-  label,
-  value,
-  onChange,
-  min,
-  max,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-  min: number;
-  max: number;
-}) {
-  const [inputValue, setInputValue] = useState<string>(value.toString());
-
-  // Sync input value when external value changes (e.g., from buttons)
-  useEffect(() => {
-    setInputValue(value.toString());
-  }, [value]);
-
-  const handleAdjustment = useCallback(
-    (adjustment: number) => {
-      onChange(Math.max(min, Math.min(max, value + adjustment)));
-    },
-    [onChange, min, max, value]
-  );
-
-  const handleInputChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value;
-      setInputValue(newValue);
-
-      // Allow empty string while typing
-      if (newValue === "") {
-        return;
-      }
-
-      const numValue = parseInt(newValue, 10);
-      if (!isNaN(numValue) && numValue >= min && numValue <= max) {
-        onChange(numValue);
-      }
-    },
-    [onChange, min, max]
-  );
-
-  const handleBlur = useCallback(() => {
-    const numValue = parseInt(inputValue, 10);
-    if (isNaN(numValue) || numValue < min || numValue > max) {
-      // Reset to current value if invalid
-      setInputValue(value.toString());
-    } else {
-      onChange(numValue);
-    }
-  }, [inputValue, value, min, max, onChange]);
-
-  return (
-    <Field orientation="horizontal" className="items-center">
-      <FieldLabel htmlFor={label} className="items-center">
-        {label}
-      </FieldLabel>
-      <FieldContent>
-        <ButtonGroup className="flex items-center">
-          <Input
-            id={label}
-            value={inputValue}
-            onChange={handleInputChange}
-            onBlur={handleBlur}
-            size={3}
-            className="h-8 !w-14 font-mono text-center"
-            maxLength={3}
-          />
-          <Button
-            variant="outline"
-            size="icon-sm"
-            type="button"
-            aria-label="Decrement"
-            onClick={() => handleAdjustment(-1)}
-            value={value}
-            disabled={value < min}
-          >
-            <IconMinus />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            type="button"
-            aria-label="Increment"
-            onClick={() => handleAdjustment(1)}
-            value={value}
-            disabled={value > max}
-          >
-            <IconPlus />
-          </Button>
-        </ButtonGroup>
-      </FieldContent>
-    </Field>
-  );
-}
-
-function RangePopover({
-  buttonLabel,
-  min,
-  max,
-}: {
-  buttonLabel: string;
-  min: number;
-  max: number;
-}) {
-  const [from, setFrom] = useState(min);
-  const [to, setTo] = useState(max);
-
-  const handleFromChange = useCallback(
-    (newFrom: number) => {
-      setFrom(newFrom);
-      // If "From" becomes >= "To", update "To" to be one greater
-      if (newFrom >= to) {
-        const newTo = Math.min(max, newFrom + 1);
-        if (newTo <= max) {
-          setTo(newTo);
-        }
-      }
-    },
-    [to, max]
-  );
-
-  const handleToChange = useCallback(
-    (newTo: number) => {
-      setTo(newTo);
-      // If "To" becomes <= "From", update "From" to be one less
-      if (newTo <= from) {
-        const newFrom = Math.max(min, newTo - 1);
-        if (newFrom >= min) {
-          setFrom(newFrom);
-        }
-      }
-    },
-    [from, min]
-  );
-
-  return (
-    <Popover>
-      <PopoverTrigger>
-        <Button variant="outline" type="button" size="sm">
-          {buttonLabel}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start">
-        <div className="space-y-2 mb-4">
-          <h4 className="leading-none font-medium">{buttonLabel}</h4>
-          <Separator />
-        </div>
-        <FieldSet>
-          <FieldGroup className="flex flex-col gap-2">
-            <RangeField
-              label="From"
-              value={from}
-              onChange={handleFromChange}
-              min={min}
-              max={Math.min(max, to - 1)}
-            />
-            <RangeField
-              label="To"
-              value={to}
-              onChange={handleToChange}
-              min={Math.max(min, from + 1)}
-              max={max}
-            />
-          </FieldGroup>
-        </FieldSet>
-      </PopoverContent>
-    </Popover>
-  );
 }
 
 const locations = [
@@ -233,20 +48,14 @@ const locations = [
   { label: "Miami", value: "miami" },
 ];
 
-const interests = [
-  { label: "Music", value: "music" },
-  { label: "Reading", value: "reading" },
-  { label: "Traveling", value: "traveling" },
-  { label: "Cooking", value: "cooking" },
-  { label: "Dancing", value: "dancing" },
-];
-
 export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [activeTab, setActiveTab] = useState<string>("browse-all");
+  const [isFiltered, setIsFiltered] = useState(false);
+  const { data: interests, isLoading: isInterestsLoading } = useInterests();
 
   const table = useReactTable({
     data,
@@ -261,7 +70,9 @@ export function DataTable<TData, TValue>({
     },
   });
 
-  const isFiltered = table.getState().columnFilters.length > 0;
+  useEffect(() => {
+    setIsFiltered(columnFilters.length > 0);
+  }, [columnFilters]);
 
   return (
     <Tabs
@@ -291,46 +102,70 @@ export function DataTable<TData, TValue>({
           <TabsTrigger value="suggested">Suggested</TabsTrigger>
         </TabsList>
       </div>
-      <div className="flex row gap-2">
-        <div className="flex items-center">
-          <Input
-            placeholder="Search by first name..."
-            value={
-              (table.getColumn("firstName")?.getFilterValue() as string) ?? ""
-            }
-            onChange={(event) =>
-              table.getColumn("firstName")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-          />
+      {/* Filters row */}
+      {!isInterestsLoading && interests ? (
+        <div className="flex row gap-2">
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Search by first name..."
+              value={
+                (table.getColumn("firstName")?.getFilterValue() as string) ?? ""
+              }
+              onChange={(event) =>
+                table.getColumn("firstName")?.setFilterValue(event.target.value)
+              }
+              className="max-w-sm"
+            />
+            {table.getColumn("age") && (
+              <DataTableRangeFilter
+                column={table.getColumn("age")}
+                title="Age range"
+                min={18}
+                max={99}
+              />
+            )}
+            {table.getColumn("fameRating") && (
+              <DataTableRangeFilter
+                column={table.getColumn("fameRating")}
+                title="Fame rating range"
+                min={0}
+                max={100}
+              />
+            )}
+            {table.getColumn("location") && (
+              <DataTableFacetedFilter
+                column={table.getColumn("location")}
+                title="Location"
+                options={locations}
+              />
+            )}
+            {table.getColumn("interests") && (
+              <DataTableFacetedFilter
+                column={table.getColumn("interests")}
+                title="Interests"
+                options={interests.map((interest: Interest) => ({
+                  label: interest.name,
+                  value: interest.name,
+                }))}
+              />
+            )}
+            {isFiltered && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => table.resetColumnFilters()}
+              >
+                Reset
+                <X />
+              </Button>
+            )}
+          </div>
         </div>
-        <RangePopover buttonLabel="Age range" min={18} max={99} />
-        <RangePopover buttonLabel="Fame rating range" min={0} max={100} />
-        {table.getColumn("location") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("location")}
-            title="Location"
-            options={locations}
-          />
-        )}
-        {table.getColumn("interests") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("interests")}
-            title="Interests"
-            options={interests}
-          />
-        )}
-        {isFiltered && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => table.resetColumnFilters()}
-          >
-            Reset
-            <X />
-          </Button>
-        )}
-      </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-10 w-full" />
+        </div>
+      )}
       <TabsContent value="browse-all">
         <div className="overflow-hidden rounded-md border">
           <Table>

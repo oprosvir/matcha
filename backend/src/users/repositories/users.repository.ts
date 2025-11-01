@@ -22,6 +22,8 @@ const USER_BASE_QUERY = `
     u.fame_rating AS "fameRating",
     u.latitude AS "latitude",
     u.longitude AS "longitude",
+    u.city_name AS "cityName",
+    u.country_name AS "countryName",
     u.last_time_active AS "lastTimeActive",
     u.created_at AS "createdAt",
     u.updated_at AS "updatedAt",
@@ -183,6 +185,8 @@ export class UsersRepository {
         latitude as "latitude",
         longitude as "longitude",
         last_time_active AS "lastTimeActive",
+        city_name AS "cityName",
+        country_name AS "countryName",
         created_at AS "createdAt",
         updated_at AS "updatedAt",
         COALESCE(
@@ -250,6 +254,26 @@ export class UsersRepository {
     try {
       const result = await this.db.query<{ password_hash: string }>(`SELECT password_hash FROM users WHERE username = $1`, [username]);
       return result.rows[0]?.password_hash || null;
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getCityNameByUserId(userId: string): Promise<string> {
+    try {
+      const result = await this.db.query<{ city_name: string }>(`SELECT city_name FROM users WHERE id = $1`, [userId]);
+      return result.rows[0]?.city_name || null;
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getCountryNameByUserId(userId: string): Promise<string> {
+    try {
+      const result = await this.db.query<{ country_name: string }>(`SELECT country_name FROM users WHERE id = $1`, [userId]);
+      return result.rows[0]?.country_name || null;
     } catch (error) {
       console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
