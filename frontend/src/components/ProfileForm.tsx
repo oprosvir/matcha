@@ -14,17 +14,21 @@ const profileSchema = z.object({
     .min(2, { message: "First name must be at least 2 characters long" })
     .max(50, { message: "First name must be less than 50 characters long" })
     .regex(/^[a-zA-ZÀ-ÿ\s\-']+$/, {
-      message: "First name can contain letters, spaces, hyphens, and apostrophes",
+      message:
+        "First name can contain letters, spaces, hyphens, and apostrophes",
     }),
   lastName: z
     .string()
     .min(2, { message: "Last name must be at least 2 characters long" })
     .max(50, { message: "Last name must be less than 50 characters long" })
     .regex(/^[a-zA-ZÀ-ÿ\s\-']+$/, {
-      message: "Last name can contain letters, spaces, hyphens, and apostrophes",
+      message:
+        "Last name can contain letters, spaces, hyphens, and apostrophes",
     }),
   gender: z.enum(["male", "female"], { message: "Please select a gender" }),
-  sexualOrientation: z.enum(["straight", "gay", "bisexual"], { message: "Please select your sexual orientation" }),
+  sexualOrientation: z.enum(["straight", "gay", "bisexual"], {
+    message: "Please select your sexual orientation",
+  }),
   biography: z
     .string()
     .min(5, "Biography must be at least 5 characters")
@@ -130,7 +134,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-2 block">Sexual Orientation</label>
+          <label className="text-sm font-medium mb-2 block">
+            Sexual Orientation
+          </label>
           <select
             {...form.register("sexualOrientation")}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

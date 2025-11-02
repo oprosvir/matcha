@@ -23,7 +23,7 @@ export interface User {
   is_email_verified: boolean;
   first_name: string;
   last_name: string;
-  date_of_birth: string | null;
+  date_of_birth: Date | null;
   gender: Gender | null;
   sexual_orientation: SexualOrientation | null;
   biography: string | null;
@@ -316,6 +316,44 @@ export class UsersRepository {
         throw error;
       }
 
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getPasswordHashByUsername(username: string): Promise<string | null> {
+    try {
+      const result = await this.db.query<{ password_hash: string }>(`SELECT password_hash FROM users WHERE username = $1`, [username]);
+      return result.rows[0]?.password_hash || null;
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async findAllPreviewByIds(ids: string[]): Promise<any[]> {
+    try {
+      const result = await this.db.query<any>(`
+        SELECT
+          u.id,
+          u.first_name,
+          u.last_name,
+          COALESCE(
+            (SELECT url FROM user_photos WHERE user_id = u.id AND is_profile_pic = true LIMIT 1),
+            (SELECT url FROM user_photos WHERE user_id = u.id LIMIT 1),
+            ''
+          ) as profile_picture
+        FROM users u
+        WHERE u.id = ANY($1::uuid[])
+      `, [ids]);
+
+      return result.rows.map(row => ({
+        id: row.id,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        profilePicture: row.profile_picture,
+      }));
+    } catch (error) {
       console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }

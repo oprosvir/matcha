@@ -11,7 +11,21 @@ import { CustomHttpException } from 'src/common/exceptions/custom-http.exception
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  private readonly ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+
+  private readonly ACCESS_TOKEN_SECRET: string;
+
+  constructor() {
+    const access = process.env.ACCESS_TOKEN_SECRET;
+    if (!access) {
+      throw new Error('JWT secret not configured (ACCESS_TOKEN_SECRET)');
+    }
+    this.ACCESS_TOKEN_SECRET = access;
+  }
+
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -24,9 +38,5 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException(new CustomHttpException('INVALID_TOKEN', 'Invalid token', 'ERROR_INVALID_TOKEN', HttpStatus.UNAUTHORIZED));
     }
     return true;
-  }
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
   }
 }

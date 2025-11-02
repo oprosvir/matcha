@@ -14,6 +14,7 @@ import {
   MessageCircle,
   MapPin,
 } from "lucide-react";
+import { Confetti } from "@/components/ui/confetti"
 
 export function Dashboard() {
   const { data: user, isLoading } = useCurrentUser();
@@ -39,16 +40,18 @@ export function Dashboard() {
 
     return (
       <AppLayout>
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">
-            Welcome back, {user.firstName}!
-          </h1>
-          <p className="text-muted-foreground mb-6">
-            Ready to find your perfect match?
-          </p>
+        <div className="max-w-5xl mx-auto flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-bold">
+              Welcome back, {user.firstName}!
+            </h1>
+            <p className="text-muted-foreground">
+              Ready to find your perfect match?
+            </p>
+          </div>
 
           {/* Profile Hero Card */}
-          <Card className="mb-6">
+          <Card>
             <CardContent>
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Avatar */}
@@ -107,7 +110,7 @@ export function Dashboard() {
           </Card>
 
           {/* Quick Actions Grid */}
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
             {/* Browse Profiles */}
             <Card className="opacity-60">
               <CardContent className="flex flex-col h-full">
@@ -151,6 +154,7 @@ export function Dashboard() {
             </Card>
           </div>
         </div>
+        <Confetti />
       </AppLayout>
     );
   }

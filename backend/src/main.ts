@@ -12,9 +12,9 @@ async function bootstrap() {
     credentials: true,
   });
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // Strip properties that don't have decorators
-    forbidNonWhitelisted: true, // Throw error if non-whitelisted properties exist
-    transform: true, // Automatically transform payloads to DTO instances
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
   }));
   app.useGlobalFilters(new HttpExceptionFilter());
   await app.listen(process.env.PORT ?? 3000);

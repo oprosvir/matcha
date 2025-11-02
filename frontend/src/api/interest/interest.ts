@@ -1,17 +1,19 @@
 import apiClient from "@/lib/apiClient";
 import { parseApiResponse } from "../parseResponse";
-import { type Interests, InterestsSchema } from "@/types/user";
+import { InterestSchema, type Interest } from "@/types/user";
 import { createApiResponseSchema } from "../schema";
 import { getToastMessage } from "@/lib/messageMap";
 import { z } from "zod";
 
+const FindAllResponseSchema = z.object({ interests: z.array(InterestSchema) });
+
 export const interestApi = {
-  findAll: async (): Promise<Interests> => {
-    const response = await parseApiResponse(apiClient.get('/interests/all'), createApiResponseSchema(InterestsSchema));
+  findAll: async (): Promise<Interest[]> => {
+    const response = await parseApiResponse(apiClient.get('/interests/all'), createApiResponseSchema(FindAllResponseSchema));
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
     }
-    return response.data;
+    return response.data.interests;
   },
 
   updateMyInterests: async (interestIds: string[]): Promise<void> => {
@@ -22,5 +24,6 @@ export const interestApi = {
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
     }
+    return response.data;
   },
 };

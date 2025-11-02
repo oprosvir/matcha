@@ -2,7 +2,17 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { Home, User, Search, Heart, MessageCircle, type LucideIcon } from "lucide-react";
+import {
+  Home,
+  User,
+  Search,
+  Heart,
+  MessageCircle,
+  type LucideIcon,
+} from "lucide-react";
+import { NotificationMenu } from "../ui/notification-bell";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useUnreadMessagesCount } from "@/hooks/useUnreadMessagesCount";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -12,6 +22,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { data: notifications } = useNotifications();
+  const { data: unreadMessagesCount } = useUnreadMessagesCount();
 
   const handleSignOut = async () => {
     await signOut();
@@ -28,11 +40,11 @@ export function AppLayout({ children }: AppLayoutProps) {
     { path: "/profile", label: "Profile", icon: User },
     { path: "/browse", label: "Browse", icon: Search, disabled: true },
     { path: "/matches", label: "Matches", icon: Heart, disabled: true },
-    { path: "/chat", label: "Chat", icon: MessageCircle, disabled: true },
+    { path: "/chat", label: "Chat", icon: MessageCircle, disabled: false },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen w-screen flex flex-col bg-background">
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-10">
         <div className="container max-w-7xl mx-auto px-4">
@@ -62,6 +74,11 @@ export function AppLayout({ children }: AppLayoutProps) {
                     >
                       <Icon className="w-4 h-4" />
                       {link.label}
+                      {link.path === "/chat" && unreadMessagesCount > 0 && (
+                        <Badge className="ml-1 text-[10px] bg-blue-500">
+                          {unreadMessagesCount}
+                        </Badge>
+                      )}
                       {link.disabled && (
                         <Badge variant="secondary" className="ml-1 text-[10px]">
                           Soon
@@ -71,6 +88,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   );
                 })}
               </nav>
+              <NotificationMenu notifications={notifications ?? []} />
             </div>
 
             {/* Sign out button */}
@@ -82,12 +100,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 py-8 pb-24 md:pb-8">
-        {children}
-      </main>
+      <main className="p-6 flex-1 flex flex-col min-h-0">{children}</main>
 
       {/* Footer - Hidden on mobile due to bottom nav */}
-      <footer className="hidden md:block border-t bg-card py-3">
+      <footer className="hidden md:block border-t bg-card py-3 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>
             &copy; 2025 Matcha. Made by{" "}
@@ -130,8 +146,19 @@ export function AppLayout({ children }: AppLayoutProps) {
                     : "text-foreground hover:text-primary"
                 } ${link.disabled ? "pointer-events-none" : ""}`}
               >
-                <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
-                <span className={`text-[10px] ${isActive ? "font-semibold" : "font-medium"}`}>
+                <div className="relative">
+                  <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
+                  {link.path === "/chat" && unreadMessagesCount > 0 && (
+                    <span className="absolute -top-1 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-blue-500 text-blue-500-foreground text-white rounded-full">
+                      {unreadMessagesCount}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] ${
+                    isActive ? "font-semibold" : "font-medium"
+                  }`}
+                >
                   {link.label}
                 </span>
               </Link>

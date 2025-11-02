@@ -4,24 +4,26 @@ import * as jwt from 'jsonwebtoken';
 import * as crypto from 'crypto';
 import { Resend } from 'resend';
 import { PrivateUserDto } from 'src/users/dto';
-import { SignUpResponseDto } from './dto/sign-up-response.dto';
-import { SignInResponseDto } from './dto/sign-in-response.dto';
+import { SignUpResponseDto } from './dto/sign-up/sign-up-response.dto';
+import { SignInResponseDto } from './dto/sign-in/sign-in-response.dto';
 import { AuthRepository } from './repositories/auth.repository';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
+import { RefreshTokenResponseDto } from './dto/refresh-token/refresh-token-response.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userService: UserService, private readonly authRepository: AuthRepository) { }
-
-  private readonly ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
-  private readonly REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
-  private readonly resend = new Resend(process.env.RESEND_API_KEY);
-
-  // TODO: Check if this is the same policy as the frontend + common english words tester
-  private isValidPassword(password: string): boolean {
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{12,}$/;
-    return strongPasswordRegex.test(password);
+  constructor(private readonly userService: UserService, private readonly authRepository: AuthRepository) {
+    const access = process.env.ACCESS_TOKEN_SECRET;
+    const refresh = process.env.REFRESH_TOKEN_SECRET;
+    if (!access || !refresh) {
+      throw new Error('JWT secrets not configured (ACCESS_TOKEN_SECRET/REFRESH_TOKEN_SECRET)');
+    }
+    this.ACCESS_TOKEN_SECRET = access;
+    this.REFRESH_TOKEN_SECRET = refresh;
   }
+  private readonly ACCESS_TOKEN_SECRET: string;
+  private readonly REFRESH_TOKEN_SECRET: string;
+  private readonly resend = new Resend(process.env.RESEND_API_KEY);
 
   private generateAccessToken(user: { id: string, email: string }): string {
     return jwt.sign({ sub: user.id.toString(), email: user.email }, this.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
@@ -47,7 +49,6 @@ export class AuthService {
   }
 
   async signUp(email: string, password: string, firstName: string, lastName: string, username: string): Promise<SignUpResponseDto> {
-    if (!this.isValidPassword(password)) throw new CustomHttpException('INVALID_PASSWORD', 'Password is not strong enough', 'ERROR_INVALID_PASSWORD', HttpStatus.BAD_REQUEST);
     const existingUser: PrivateUserDto | null = await this.userService.findByEmailOrUsername(email, username);
     if (existingUser) throw new CustomHttpException('EMAIL_OR_USERNAME_ALREADY_EXISTS', 'Email or username already exists', 'ERROR_EMAIL_OR_USERNAME_ALREADY_EXISTS', HttpStatus.CONFLICT);
     const newUser: PrivateUserDto = await this.userService.create({ username, email, firstName, lastName, password });
@@ -66,15 +67,15 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken(refreshToken: string): Promise<RefreshTokenResponseDto> {
     if (!refreshToken) throw new CustomHttpException('NO_REFRESH_TOKEN_PROVIDED', 'No refresh token provided', 'ERROR_NO_REFRESH_TOKEN_PROVIDED', HttpStatus.BAD_REQUEST);
     try {
       const payload: any = jwt.verify(refreshToken, this.REFRESH_TOKEN_SECRET);
       const storedToken = await this.authRepository.getEntry(`refresh_token:${payload.sub}`);
       if (!storedToken || storedToken !== refreshToken) throw new CustomHttpException('INVALID_REFRESH_TOKEN', 'Invalid refresh token', 'ERROR_INVALID_REFRESH_TOKEN', HttpStatus.BAD_REQUEST);
-      const user = await this.userService.findById(payload.sub);
-      if (!user) throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.BAD_REQUEST);
-      const accessToken = this.generateAccessToken(user);
+      const user: PrivateUserDto | null = await this.userService.findById(payload.sub);
+      if (!user) throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND);
+      const accessToken = this.generateAccessToken({ id: user.id, email: user.email });
       return { accessToken };
     } catch (error) {
       if (error instanceof jwt.JsonWebTokenError) throw new CustomHttpException('INVALID_REFRESH_TOKEN', 'Invalid refresh token', 'ERROR_INVALID_REFRESH_TOKEN', HttpStatus.BAD_REQUEST);
@@ -99,7 +100,6 @@ export class AuthService {
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
     if (!token || !newPassword) throw new CustomHttpException('TOKEN_AND_NEW_PASSWORD_REQUIRED', 'Token and new password are required', 'ERROR_TOKEN_AND_NEW_PASSWORD_REQUIRED', HttpStatus.BAD_REQUEST);
-    if (!this.isValidPassword(newPassword)) throw new CustomHttpException('INVALID_PASSWORD', 'Password is not strong enough', 'ERROR_INVALID_PASSWORD', HttpStatus.BAD_REQUEST);
     const userId = await this.authRepository.getEntry(`password_reset:${token}`);
     if (!userId) throw new CustomHttpException('INVALID_OR_EXPIRED_RESET_TOKEN', 'Invalid or expired reset token', 'ERROR_INVALID_OR_EXPIRED_RESET_TOKEN', HttpStatus.BAD_REQUEST);
     await this.userService.updatePassword(userId, newPassword);
@@ -127,7 +127,7 @@ export class AuthService {
     const verifyEmailToken = crypto.randomBytes(32).toString('hex');
     await this.authRepository.setEntry(`verify_email:${verifyEmailToken}`, user.id.toString(), 60 * 60);
     try {
-      const response = await this.resend.emails.send({
+      await this.resend.emails.send({
         from: 'onboarding@resend.dev',
         to: user.email,
         subject: 'Verify your email for Matcha',

@@ -19,11 +19,8 @@ function onTokenRefreshed(token: string | null) {
 async function refreshAccessToken(): Promise<string | null> {
   try {
     const response = await authApi.refreshToken();
-    if (response.success && response.data.accessToken) {
-      tokenManager.setToken(response.data.accessToken);
-      return response.data.accessToken;
-    }
-    return null;
+    tokenManager.setToken(response.accessToken);
+    return response.accessToken;
   } catch (err) {
     return null;
   }

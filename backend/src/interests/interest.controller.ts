@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { InterestService } from './interest.service';
-import { CurrentUser } from 'src/auth/current-user.decorator';
+import { CurrentUser } from 'src/auth/current-user.decorators';
 import { UpdateUserInterestsDto } from './dto/update-user-interests.dto';
 
 @Controller('interests')
