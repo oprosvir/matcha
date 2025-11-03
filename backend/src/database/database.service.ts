@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Pool, QueryResult } from 'pg';
+import { Pool, PoolClient, QueryResult } from 'pg';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
@@ -11,7 +11,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       host: process.env.DB_HOST,
       database: process.env.DB_NAME,
       password: process.env.DB_PASSWORD,
-      port: process.env.DB_PORT,
+      port: Number(process.env.DB_PORT),
     });
     console.log('Database connection pool initialized.');
   }
@@ -35,5 +35,36 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       throw new Error('Database pool is not initialized.');
     }
     return this.pool.query<T>(text, params);
+  }
+
+  /**
+   * Get a client for transaction management.
+   * Must be released after use: client.release()
+   * @returns A client from the pool for manual transaction handling
+   */
+  async getClient(): Promise<PoolClient> {
+    if (!this.pool) {
+      throw new Error('Database pool is not initialized.');
+    }
+    return this.pool.connect();
+  }
+
+  /**
+   * Run multiple operations in a single SQL transaction.
+   * Automatically commits or rolls back.
+   */
+  async transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
+    const client = await this.getClient();
+    try {
+      await client.query('BEGIN');
+      const result = await callback(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }

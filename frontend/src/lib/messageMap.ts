@@ -7,7 +7,9 @@ export const messageMap: Record<string, string> = {
   "SUCCESS_PASSWORD_RESET": "Password reset successfully",
   "SUCCESS_VERIFY_EMAIL_SENT": "A verification email has been sent to your email address 📨",
   "SUCCESS_EMAIL_VERIFIED": "Email verified successfully 🎉",
+  "SUCCESS_PROFILE_COMPLETED": "Profile completed successfully! 🎉",
   "SUCCESS_PROFILE_UPDATED": "Profile updated successfully ✨",
+  "SUCCESS_UPDATE_USER_INTERESTS": "Interests updated successfully ✨",
 
   // Error messages
   "ERROR_INTERNAL_SERVER": "An unexpected internal server error occurred please try again later",
@@ -19,6 +21,7 @@ export const messageMap: Record<string, string> = {
   "ERROR_USER_NOT_FOUND": "User not found",
   "ERROR_NO_UPDATE_FIELDS": "No fields provided for update.",
   "ERROR_VALIDATION_FAILED": "The data you provided is invalid. Please check your inputs and try again.",
+  "ERROR_INVALID_INTEREST_IDS": "One or more interest IDs are invalid.",
   "ERROR_UNKNOWN": "An unknown error occurred. Please try again.",
 }
 

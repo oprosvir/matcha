@@ -1,12 +1,12 @@
 import { useCurrentUser } from "@/hooks/useUserProfile";
 import { Spinner } from "@/components/ui/spinner";
-import type { User } from "@/types/user";
 import { CompleteProfile } from "@/components/complete-profile";
 import { AppLayout } from "@/components/layouts/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ErrorFallback } from "@/components/ErrorFallback";
+import { calculateAge } from "@/utils/dateUtils";
 import {
   User as UserIcon,
   Search,
@@ -15,20 +15,6 @@ import {
   MapPin,
 } from "lucide-react";
 import { Confetti } from "@/components/ui/confetti"
-
-function UserHasCompletedProfile(user: User): boolean {
-  // TODO: Add photos and interests check when backend endpoints are ready
-  return (
-    user.gender !== null &&
-    user.sexualOrientation !== null &&
-    user.biography !== null
-    // user.photos &&
-    // user.photos.length > 0 &&
-    // user.photos.some((photo) => photo.is_profile_pic) &&
-    // user.interests &&
-    // user.interests.length > 0
-  );
-}
 
 export function Dashboard() {
   const { data: user, isLoading } = useCurrentUser();
@@ -43,14 +29,14 @@ export function Dashboard() {
   }
 
   // Profile not completed - show CompleteProfile form (without AppLayout)
-  if (user && !UserHasCompletedProfile(user)) {
+  if (user && !user.profileCompleted) {
     return <CompleteProfile user={user} />;
   }
 
   // Profile completed - show dashboard with AppLayout
   // TODO: make user photo not optional
-  if (user && UserHasCompletedProfile(user)) {
-    const profilePic = user.photos?.find((p) => p.isProfilePic);
+  if (user && user.profileCompleted) {
+    const profilePic = user.photos?.find((p) => p.is_profile_pic);
 
     return (
       <AppLayout>
@@ -87,6 +73,7 @@ export function Dashboard() {
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold">
                     {user.firstName} {user.lastName}
+                    {user.dateOfBirth && <span className="text-muted-foreground font-normal">, {calculateAge(user.dateOfBirth)}</span>}
                   </h2>
                   <p className="text-muted-foreground text-sm mb-3">
                     @{user.username}

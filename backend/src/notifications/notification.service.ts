@@ -80,8 +80,8 @@ export class NotificationService {
           type: NotificationType.LIKE,
           payload: {
             fromUserId: sourceUser.id,
-            fromUserFirstName: sourceUser.firstName,
-            fromUserLastName: sourceUser.lastName,
+            fromUserFirstName: sourceUser.first_name,
+            fromUserLastName: sourceUser.last_name,
           },
           createdAt: notification.createdAt,
         };
@@ -92,8 +92,8 @@ export class NotificationService {
           type: NotificationType.MATCH,
           payload: {
             withUserId: sourceUser.id,
-            withUserFirstName: sourceUser.firstName,
-            withUserLastName: sourceUser.lastName,
+            withUserFirstName: sourceUser.first_name,
+            withUserLastName: sourceUser.last_name,
           },
           createdAt: notification.createdAt,
         };
@@ -104,8 +104,8 @@ export class NotificationService {
           type: NotificationType.VIEW,
           payload: {
             viewerUserId: sourceUser.id,
-            viewerUserFirstName: sourceUser.firstName,
-            viewerUserLastName: sourceUser.lastName,
+            viewerUserFirstName: sourceUser.first_name,
+            viewerUserLastName: sourceUser.last_name,
           },
           createdAt: notification.createdAt,
         }
@@ -116,8 +116,8 @@ export class NotificationService {
           type: NotificationType.UNLIKE,
           payload: {
             fromUserId: sourceUser.id,
-            fromUserFirstName: sourceUser.firstName,
-            fromUserLastName: sourceUser.lastName,
+            fromUserFirstName: sourceUser.first_name,
+            fromUserLastName: sourceUser.last_name,
           },
           createdAt: notification.createdAt,
         };

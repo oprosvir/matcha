@@ -61,12 +61,24 @@ case $COMMAND in
 
   clear)
     echo -e "${YELLOW}⏹  Clearing the data of the services...${NC}"
-    docker compose down
-    rm -rf ./db/data
-    rm -rf ./redis/data
-    docker compose build --no-cache
-    docker compose up -d
+
+    # Fix permissions and remove data
+    if [ -d "./db/data" ]; then
+      echo "🗑️  Removing database data..."
+      sudo chown -R "$(id -u)":"$(id -g)" "./db/data"
+      rm -rf ./db/data
+    fi
+
+    if [ -d "./redis/data" ]; then
+      echo "🗑️  Removing redis data..."
+      sudo chown -R "$(id -u)":"$(id -g)" "./redis/data"
+      rm -rf ./redis/data
+    fi
+
     echo -e "${GREEN}✅ Data cleared${NC}"
+    echo ""
+
+    ./run.sh restart
     ;;
   
   *)

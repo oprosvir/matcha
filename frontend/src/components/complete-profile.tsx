@@ -15,6 +15,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useInterests } from "@/hooks/useInterests";
 import {
   Tags,
@@ -28,7 +29,7 @@ import {
   TagsValue,
 } from "@/components/ui/shadcn-io/tags";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState, useRef, useEffect, type ChangeEvent } from "react";
 import { Button } from "./ui/button";
 import { Camera, XIcon } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
@@ -36,7 +37,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUpdateProfile } from "@/hooks/useUserProfile";
+import { useCompleteProfile } from "@/hooks/useUserProfile";
+import { calculateAge, getMaxDate, formatDateForInput } from "@/utils/dateUtils";
 
 const fileSchema = z
   .instanceof(File)
@@ -47,7 +49,14 @@ const fileSchema = z
   );
 
 const formSchema = z.object({
-  gender: z.enum(["male", "female"]).refine((val) => val !== undefined, {
+  dateOfBirth: z
+    .string()
+    .min(1, "Date of birth is required")
+    .refine(
+      (date) => calculateAge(date) >= 18,
+      { message: "You must be at least 18 years old" }
+  ),
+  gender: z.enum(["male", "female"], {
     message: "Gender is required",
   }),
   sexualOrientation: z
@@ -59,10 +68,8 @@ const formSchema = z.object({
     .string()
     .min(5, "Biography must be at least 5 characters")
     .max(500, "Biography must be less than 500 characters"),
-  // TODO: Make these required when backend endpoints are ready
-  // interests: z.array(z.number()).min(1, "At least one interest is required"),
-  // photos: z.array(fileSchema).min(1, "At least one photo is required"),
-  interests: z.array(z.string()).optional(),
+  interests: z.array(z.string()).min(1, "At least one interest is required"),
+  // TODO: Make photos required when backend endpoint is ready
   photos: z.array(fileSchema).optional(),
 });
 
@@ -78,10 +85,21 @@ function FileInputWithCamera({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       onChange?.(file);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
@@ -118,7 +136,7 @@ function FileInputWithCamera({
             />
             <Button
               type="button"
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                 e.stopPropagation();
                 handleRemove();
               }}
@@ -169,11 +187,12 @@ function PhotoUploadGrid({
 export function CompleteProfileForm({ user }: { user: User }) {
   const { data: interestsOptions, isLoading, isSuccess } = useInterests();
   const { signOut } = useAuth();
-  const { mutate: updateProfile, isPending } = useUpdateProfile();
+  const { mutate: completeProfile, isPending } = useCompleteProfile();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      dateOfBirth: "",
       gender: user.gender ?? undefined,
       sexualOrientation: user.sexualOrientation ?? undefined,
       biography: user.biography ?? "",
@@ -198,10 +217,15 @@ export function CompleteProfileForm({ user }: { user: User }) {
     if (isSelected) {
       setValue(
         "interests",
-        currentInterests.filter((id) => id !== interestId)
+        currentInterests.filter((id) => id !== interestId),
+        { shouldValidate: true }
       );
     } else {
-      setValue("interests", [...currentInterests, interestId]);
+      // Limit to maximum 10 interests
+      if (currentInterests.length >= 10) {
+        return; // Don't allow selecting more than 10
+      }
+      setValue("interests", [...currentInterests, interestId], { shouldValidate: true });
     }
   };
 
@@ -214,12 +238,13 @@ export function CompleteProfileForm({ user }: { user: User }) {
   };
 
   const onSubmit = (data: FormData) => {
-    // TODO: Add photo upload and interests endpoints on backend
-    // For now, only send basic profile fields
-    updateProfile({
+    // TODO: Add photo upload endpoint on backend
+    completeProfile({
+      dateOfBirth: data.dateOfBirth,
       gender: data.gender,
       sexualOrientation: data.sexualOrientation,
       biography: data.biography,
+      interestIds: data.interests,
     });
   };
 
@@ -235,6 +260,26 @@ export function CompleteProfileForm({ user }: { user: User }) {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup>
+            <Field>
+              <FieldLabel>What is your date of birth?</FieldLabel>
+              <Controller
+                name="dateOfBirth"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    type="date"
+                    min="1900-01-01"
+                    max={formatDateForInput(getMaxDate())}
+                    {...field}
+                  />
+                )}
+              />
+              {errors.dateOfBirth && (
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.dateOfBirth.message}
+                </p>
+              )}
+            </Field>
             <Field>
               <FieldLabel>What is your gender?</FieldLabel>
               <Controller
@@ -310,40 +355,47 @@ export function CompleteProfileForm({ user }: { user: User }) {
               <FieldLabel>What are your interests?</FieldLabel>
               {isLoading && <Skeleton className="h-10 w-full" />}
               {isSuccess && (
-                <Tags className="max-w-full">
-                  <TagsTrigger>
-                    {getSelectedInterests().map((interest) => (
-                      <TagsValue
-                        key={interest.id}
-                        onRemove={() => handleInterestToggle(interest.id)}
-                      >
-                        {interest.name}
-                      </TagsValue>
-                    ))}
-                  </TagsTrigger>
-                  <TagsContent>
-                    <TagsInput placeholder="Search interest..." />
-                    <TagsList>
-                      <TagsEmpty />
-                      <TagsGroup>
-                        {interestsOptions
-                          ?.filter(
-                            (interest) =>
-                              !selectedInterests?.includes(interest.id)
-                          )
-                          .map((interest) => (
-                            <TagsItem
-                              key={interest.id}
-                              onSelect={() => handleInterestToggle(interest.id)}
-                              value={interest.id.toString()}
-                            >
-                              {interest.name}
-                            </TagsItem>
-                          ))}
-                      </TagsGroup>
-                    </TagsList>
-                  </TagsContent>
-                </Tags>
+                <>
+                  <Tags className="max-w-full">
+                    <TagsTrigger>
+                      {getSelectedInterests().map((interest) => (
+                        <TagsValue
+                          key={interest.id}
+                          onRemove={() => handleInterestToggle(interest.id)}
+                        >
+                          {interest.name}
+                        </TagsValue>
+                      ))}
+                    </TagsTrigger>
+                    <TagsContent>
+                      <TagsInput placeholder="Search interest..." />
+                      <TagsList>
+                        <TagsEmpty />
+                        <TagsGroup>
+                          {interestsOptions
+                            ?.filter(
+                              (interest) =>
+                                !selectedInterests?.includes(interest.id)
+                            )
+                            .map((interest) => (
+                              <TagsItem
+                                key={interest.id}
+                                onSelect={() => handleInterestToggle(interest.id)}
+                                value={interest.id}
+                                disabled={(selectedInterests?.length || 0) >= 10}
+                              >
+                                {interest.name}
+                              </TagsItem>
+                            ))}
+                        </TagsGroup>
+                      </TagsList>
+                    </TagsContent>
+                  </Tags>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {selectedInterests?.length || 0} / 10 interests selected
+                    {(selectedInterests?.length || 0) >= 10 && " (maximum reached)"}
+                  </p>
+                </>
               )}
               {errors.interests && (
                 <p className="text-sm text-red-500 mt-1">

@@ -1,7 +1,7 @@
 import { Type } from "class-transformer";
 import { PrivateUserDto } from "../user.dto";
 
-export class UpdateProfileResponseDto {
+export class CompleteProfileResponseDto {
   @Type(() => PrivateUserDto)
   user: PrivateUserDto;
 }

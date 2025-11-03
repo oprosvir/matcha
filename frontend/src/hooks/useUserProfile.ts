@@ -2,9 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '../api/user/user';
 import { toast } from 'sonner';
 import type { User } from '@/types/user';
+import { getToastMessage } from '@/lib/messageMap';
 
-// TODO: change query key to 'user' when backend is ready
-// (temporary 'v2' key to avoid conflicts with old implementation)
 export function useCurrentUser() {
   const query = useQuery({
     queryKey: ['user'],
@@ -19,13 +18,27 @@ export function useCurrentUser() {
   };
 }
 
+export function useCompleteProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: userApi.completeProfile,
+    onSuccess: ({ data, messageKey }: { data: User; messageKey: string }) => {
+      queryClient.setQueryData(['user'], data);
+      toast.success(getToastMessage(messageKey));
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: userApi.updateProfile,
-    onSuccess: (user: User) => {
-      queryClient.setQueryData(['user', 'v2'], user);
-      toast.success('Profile updated successfully 🎉');
+    onSuccess: ({ data, messageKey }: { data: User; messageKey: string }) => {
+      queryClient.setQueryData(['user'], data);
+      toast.success(getToastMessage(messageKey));
     },
     onError: (error) => {
       toast.error(error.message);

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { ProfileForm } from "@/components/ProfileForm";
 import { AppLayout } from "@/components/layouts/AppLayout";
+import { InterestsSelector } from "@/components/InterestsSelector";
 
 export function Profile() {
   const { user, isLoading, isSuccess } = useUser();
@@ -75,6 +76,18 @@ export function Profile() {
                 </span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Interests</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Select your interests to help others find common ground with you
+            </p>
+            <InterestsSelector currentInterests={user.interests} />
           </CardContent>
         </Card>
       </div>

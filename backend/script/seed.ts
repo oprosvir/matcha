@@ -22,6 +22,7 @@ interface RandomUser {
   lastTimeActive: Date;
   portraitUrl: string;
   interests: string[];
+  dateOfBirth: Date;
 }
 
 faker.seed(55);
@@ -140,6 +141,7 @@ function createRandomUser(): RandomUser {
   const lastTimeActive = faker.date.recent();
   const portraitUrl = faker.image.personPortrait({ sex: gender, size: 512 });
   const interests = faker.helpers.uniqueArray(interestsIds, faker.number.int({ min: 1, max: interestsIds.length }));
+  const dateOfBirth = faker.date.birthdate({ min: 18, max: 70, mode: 'age' });
 
   return {
     id,
@@ -159,15 +161,27 @@ function createRandomUser(): RandomUser {
     lastTimeActive,
     portraitUrl,
     interests,
+    dateOfBirth,
   };
 }
 
 async function seedDatabase() {
   try {
-    console.log('🌱 Starting database seeding...');
 
     const client = await pool.connect();
     console.log('✅ Connected to database');
+
+    // Check if database already contains users
+    const { rows } = await client.query('SELECT COUNT(*) FROM users');
+    const userCount = Number(rows[0].count);
+
+    if (userCount > 0) {
+      console.log(`⚠️ Database already contains ${userCount} users — skipping seeding.`);
+      client.release();
+      return;
+    }
+
+    console.log('🌱 Starting database seeding...');
 
     // Create main test user first
     const mainUserId = faker.string.uuid();
@@ -175,9 +189,12 @@ async function seedDatabase() {
 
     console.log('👤 Creating main test user...');
 
+    const mainUserBirthDate = new Date();
+    mainUserBirthDate.setFullYear(mainUserBirthDate.getFullYear() - 25); // 25 years old
+
     await client.query(`
-      INSERT INTO users (id, username, email, is_email_verified, password_hash, first_name, last_name, gender, sexual_orientation, biography, fame_rating, latitude, longitude, city_name, country_name, last_time_active)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      INSERT INTO users (id, username, email, is_email_verified, password_hash, first_name, last_name, gender, sexual_orientation, biography, fame_rating, latitude, longitude, city_name, country_name, last_time_active, date_of_birth, profile_completed)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
     `, [
       mainUserId,
       MAIN_USER_USERNAME,
@@ -194,7 +211,9 @@ async function seedDatabase() {
       -74.0060,
       'New York',
       'United States',
-      new Date()
+      new Date(),
+      mainUserBirthDate,
+      true
     ]);
 
     // Generate all other users
@@ -215,7 +234,7 @@ async function seedDatabase() {
       for (let j = i; j < batchEnd; j++) {
         const user = users[j];
         const passwordHash = await bcrypt.hash(user.password, 10);
-        values.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}, $${paramIndex + 6}, $${paramIndex + 7}, $${paramIndex + 8}, $${paramIndex + 9}, $${paramIndex + 10}, $${paramIndex + 11}, $${paramIndex + 12}, $${paramIndex + 13}, $${paramIndex + 14}, $${paramIndex + 15})`);
+        values.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}, $${paramIndex + 6}, $${paramIndex + 7}, $${paramIndex + 8}, $${paramIndex + 9}, $${paramIndex + 10}, $${paramIndex + 11}, $${paramIndex + 12}, $${paramIndex + 13}, $${paramIndex + 14}, $${paramIndex + 15}, $${paramIndex + 16}, $${paramIndex + 17})`);
 
         params.push(
           user.id,
@@ -233,13 +252,15 @@ async function seedDatabase() {
           user.longitude,
           user.cityName,
           user.countryName,
-          user.lastTimeActive
+          user.lastTimeActive,
+          user.dateOfBirth,
+          true // profile_completed
         );
-        paramIndex += 16;
+        paramIndex += 18;
       }
 
       const query = `
-        INSERT INTO users (id, username, email, is_email_verified, password_hash, first_name, last_name, gender, sexual_orientation, biography, fame_rating, latitude, longitude, city_name, country_name, last_time_active)
+        INSERT INTO users (id, username, email, is_email_verified, password_hash, first_name, last_name, gender, sexual_orientation, biography, fame_rating, latitude, longitude, city_name, country_name, last_time_active, date_of_birth, profile_completed)
         VALUES ${values.join(', ')}
       `;
 

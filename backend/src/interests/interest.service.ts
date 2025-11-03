@@ -9,4 +9,8 @@ export class InterestService {
   async findAll(): Promise<FindAllResponseDto> {
     return await this.interestRepository.findAll();
   }
+
+  async updateUserInterests(userId: string, interestIds: string[]): Promise<void> {
+    return await this.interestRepository.updateUserInterests(userId, interestIds);
+  }
 }

@@ -1,19 +1,25 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { CreateUserRequestDto } from './dto/create-user/create-user-request.dto';
-import { UpdateProfileRequestDto } from './dto/update-profile/update-profile-request.dto';
-import { UsersRepository } from './repositories/users.repository';
-import { PublicUserDto } from './dto/user.dto';
+import { UsersRepository, User } from './repositories/users.repository';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
+import { InterestRepository } from 'src/interests/repository/interest.repository';
+import { DatabaseService } from 'src/database/database.service';
 import { LikesRepository } from './repositories/likes.repository';
 import { LikeSent, LikeReceived } from './repositories/likes.repository';
 import { ChatRepository } from 'src/chat/repositories/chat.repository';
-import { PrivateUserDto } from './dto/user.dto';
-import { UpdateProfileResponseDto } from './dto/update-profile/update-profile-response.dto';
-import { FindAllMatchesResponseDto } from './dto/find-all-matches/find-all-matches-response.dto';
 import { NotificationService } from 'src/notifications/notification.service';
 import { NotificationType } from 'src/common/enums/notification-type';
 import { z } from 'zod';
+import {
+  CreateUserRequestDto,
+  UpdateProfileRequestDto,
+  UpdateProfileResponseDto,
+  CompleteProfileRequestDto,
+  CompleteProfileResponseDto,
+  PublicUserDto,
+  PrivateUserDto,
+} from './dto';
+import { FindAllMatchesResponseDto } from './dto/find-all-matches/find-all-matches-response.dto';
 
 const ResolveCityNameAndCountryNameByLatitudeAndLongitudeResponseSchema = z.object({
   cityName: z.string(),
@@ -54,25 +60,65 @@ const NominatimSearchResponseSchema = z.array(
 
 @Injectable()
 export class UserService {
-  constructor(private readonly usersRepository: UsersRepository, private readonly likesRepository: LikesRepository, private readonly chatRepository: ChatRepository, private readonly notificationService: NotificationService) { }
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly interestRepository: InterestRepository,
+    private readonly db: DatabaseService,
+    private readonly likesRepository: LikesRepository,
+    private readonly chatRepository: ChatRepository,
+    private readonly notificationService: NotificationService,
+  ) { }
 
-  private mapUserToPublicUserResponseDto(user: PrivateUserDto): PublicUserDto | null {
-    if (!user) return null;
+  private mapUserToPrivateUserDto(user: User): PrivateUserDto {
     return {
       id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      dateOfBirth: user.date_of_birth ? user.date_of_birth.toISOString() : null,
       gender: user.gender,
       biography: user.biography,
-      fameRating: user.fameRating,
+      profileCompleted: user.profile_completed,
+      fameRating: user.fame_rating,
       latitude: user.latitude,
       longitude: user.longitude,
-      lastTimeActive: user.lastTimeActive || null,
-      createdAt: user.createdAt,
-      interests: user.interests,
-      photos: user.photos,
-      cityName: user.cityName,
-      countryName: user.countryName,
+      cityName: user.city_name,
+      countryName: user.country_name,
+      lastTimeActive: user.last_time_active ? user.last_time_active.toISOString() : null,
+      createdAt: user.created_at.toISOString(),
+      email: user.email,
+      username: user.username,
+      isEmailVerified: user.is_email_verified,
+      sexualOrientation: user.sexual_orientation,
+      interests: user.interests ? user.interests : [],
+      photos: user.photos ? user.photos.map(photo => ({
+        id: photo.id,
+        url: photo.url,
+        isProfilePic: photo.is_profile_pic
+      })) : [],
+    };
+  }
+
+  private mapUserToPublicUserDto(user: User): PublicUserDto {
+    return {
+      id: user.id,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      dateOfBirth: user.date_of_birth ? user.date_of_birth.toISOString() : null,
+      gender: user.gender,
+      biography: user.biography,
+      fameRating: user.fame_rating,
+      latitude: user.latitude,
+      longitude: user.longitude,
+      cityName: user.city_name,
+      countryName: user.country_name,
+      lastTimeActive: user.last_time_active ? user.last_time_active.toISOString() : null,
+      createdAt: user.created_at.toISOString(),
+      interests: user.interests ? user.interests : [],
+      photos: user.photos ? user.photos.map(photo => ({
+        id: photo.id,
+        url: photo.url,
+        isProfilePic: photo.is_profile_pic
+      })) : [],
     };
   }
 
@@ -196,28 +242,33 @@ export class UserService {
   }
 
   async findPublicProfileById(id: string): Promise<PublicUserDto | null> {
-    const user: PrivateUserDto | null = await this.usersRepository.findById(id);
+    const user: User | null = await this.usersRepository.findById(id);
     if (!user) return null;
-    return this.mapUserToPublicUserResponseDto(user);
+    return this.mapUserToPublicUserDto(user);
   }
 
   async findByUsername(username: string): Promise<PrivateUserDto | null> {
-    const user: PrivateUserDto | null = await this.usersRepository.findByUsername(username);
-    return user;
+    const user: User | null = await this.usersRepository.findByUsername(username);
+    if (!user) return null;
+    return this.mapUserToPrivateUserDto(user);
   }
 
   async findByEmailOrUsername(email: string, username: string): Promise<PrivateUserDto | null> {
-    return await this.usersRepository.findByEmailOrUsername(email, username);
+    const user: User | null = await this.usersRepository.findByEmailOrUsername(email, username);
+    if (!user) return null;
+    return this.mapUserToPrivateUserDto(user);
   }
 
-  async findById(id: string): Promise<PrivateUserDto> {
-    const user: PrivateUserDto = await this.usersRepository.findById(id);
-    return user;
+  async findById(id: string): Promise<PrivateUserDto | null> {
+    const user: User | null = await this.usersRepository.findById(id);
+    if (!user) return null;
+    return this.mapUserToPrivateUserDto(user);
   }
 
   async findByEmail(email: string): Promise<PrivateUserDto | null> {
-    const user: PrivateUserDto | null = await this.usersRepository.findByEmail(email);
-    return user;
+    const user: User | null = await this.usersRepository.findByEmail(email);
+    if (!user) return null;
+    return this.mapUserToPrivateUserDto(user);
   }
 
   async create(createUserDto: CreateUserRequestDto): Promise<PrivateUserDto> {
@@ -227,7 +278,8 @@ export class UserService {
     );
     if (existingUser) throw new CustomHttpException('USERNAME_OR_EMAIL_ALREADY_EXISTS', 'Username or email already exists.', 'ERROR_USERNAME_OR_EMAIL_ALREADY_EXISTS', HttpStatus.CONFLICT);
     const passwordHash = await bcrypt.hash(createUserDto.password, 10);
-    return await this.usersRepository.create({ ...createUserDto, passwordHash: passwordHash });
+    const user: User = await this.usersRepository.create({ ...createUserDto, password: passwordHash });
+    return this.mapUserToPrivateUserDto(user);
   }
 
   async validatePassword(username: string, password: string): Promise<boolean> {
@@ -245,8 +297,39 @@ export class UserService {
     await this.usersRepository.updateEmailVerified(userId, isEmailVerified);
   }
 
-  async updateProfile(userId: string, updates: UpdateProfileRequestDto): Promise<UpdateProfileResponseDto> {
-    return await this.usersRepository.updateProfile(userId, updates);
+  async completeProfile(userId: string, dto: CompleteProfileRequestDto): Promise<CompleteProfileResponseDto> {
+    const existingUser = await this.usersRepository.findById(userId);
+    if (!existingUser) { throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND); }
+    if (existingUser.profile_completed) { throw new CustomHttpException('PROFILE_ALREADY_COMPLETED', 'Profile already completed', 'ERROR_PROFILE_ALREADY_COMPLETED', HttpStatus.BAD_REQUEST); }
+
+    // Use a transaction to ensure both operations succeed or fail together
+    const user = await this.db.transaction(async (client) => {
+      await this.interestRepository.updateUserInterests(userId, dto.interestIds, client);
+
+      const user = await this.usersRepository.completeProfile(
+        userId,
+        {
+          dateOfBirth: dto.dateOfBirth,
+          gender: dto.gender,
+          sexualOrientation: dto.sexualOrientation,
+          biography: dto.biography,
+        },
+        client
+      );
+      return user;
+    });
+    return { user: this.mapUserToPrivateUserDto(user) };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileRequestDto): Promise<UpdateProfileResponseDto> {
+    const user: User = await this.usersRepository.updateProfile(userId, {
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      gender: dto.gender,
+      sexualOrientation: dto.sexualOrientation,
+      biography: dto.biography,
+    });
+    return { user: this.mapUserToPrivateUserDto(user) };
   }
 
   async findAllMatches(userId: string): Promise<FindAllMatchesResponseDto> {
@@ -301,4 +384,3 @@ export class UserService {
     return await this.usersRepository.getCountryNameByUserId(userId);
   }
 }
-
