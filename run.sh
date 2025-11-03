@@ -65,13 +65,13 @@ case $COMMAND in
     # Fix permissions and remove data
     if [ -d "./db/data" ]; then
       echo "🗑️  Removing database data..."
-      sudo chown -R $USER:$USER ./db/data
+      sudo chown -R "$(id -u)":"$(id -g)" "./db/data"
       rm -rf ./db/data
     fi
 
     if [ -d "./redis/data" ]; then
       echo "🗑️  Removing redis data..."
-      sudo chown -R $USER:$USER ./redis/data
+      sudo chown -R "$(id -u)":"$(id -g)" "./redis/data"
       rm -rf ./redis/data
     fi
 
