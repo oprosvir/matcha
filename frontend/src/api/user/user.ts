@@ -4,6 +4,7 @@ import { createApiResponseSchema } from '../schema';
 import { UserSchema, type SexualOrientation, type Gender, type User, type Matches, MatchesSchema } from '@/types/user';
 import { getToastMessage } from '@/lib/messageMap';
 import { z } from 'zod';
+import { type LocationEntry, LocationListSchema } from '@/types/browse';
 
 interface UpdateProfileRequest {
   firstName?: string;
@@ -29,6 +30,14 @@ const UpdateProfileResponseSchema = z.object({ user: UserSchema });
 const CompleteProfileResponseSchema = z.object({ user: UserSchema });
 
 export const userApi = {
+  getLocationList: async (): Promise<LocationEntry[]> => {
+    const response = await parseApiResponse(apiClient.get('/users/location-list'), createApiResponseSchema(LocationListSchema));
+    if (!response.success) {
+      throw new Error(getToastMessage(response.messageKey));
+    }
+    return response.data.locations;
+  },
+
   getOwnProfile: async (): Promise<User> => {
     const response = await parseApiResponse(apiClient.get('/users/me'), createApiResponseSchema(GetOwnProfileResponseSchema));
     if (!response.success) {

@@ -34,19 +34,12 @@ import { DataTableRangeFilter } from "@/components/ui/data-table-faceted-range-f
 import { useInterests } from "@/hooks/useInterests";
 import type { Interest } from "@/types/user";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocationList } from "@/hooks/useLocationList";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
-
-const locations = [
-  { label: "New York", value: "new-york" },
-  { label: "Los Angeles", value: "los-angeles" },
-  { label: "Chicago", value: "chicago" },
-  { label: "Houston", value: "houston" },
-  { label: "Miami", value: "miami" },
-];
 
 export function DataTable<TData, TValue>({
   columns,
@@ -56,6 +49,7 @@ export function DataTable<TData, TValue>({
   const [activeTab, setActiveTab] = useState<string>("browse-all");
   const [isFiltered, setIsFiltered] = useState(false);
   const { data: interests, isLoading: isInterestsLoading } = useInterests();
+  const { data: locations, isLoading: isLocationsLoading } = useLocationList();
 
   const table = useReactTable({
     data,
@@ -103,7 +97,7 @@ export function DataTable<TData, TValue>({
         </TabsList>
       </div>
       {/* Filters row */}
-      {!isInterestsLoading && interests ? (
+      {!isInterestsLoading && interests && !isLocationsLoading && locations ? (
         <div className="flex row gap-2">
           <div className="flex items-center gap-2">
             <Input
@@ -136,7 +130,10 @@ export function DataTable<TData, TValue>({
               <DataTableFacetedFilter
                 column={table.getColumn("location")}
                 title="Location"
-                options={locations}
+                options={(locations || []).map((location) => ({
+                  label: `${location.cityName}, ${location.countryName}`,
+                  value: `${location.cityName}, ${location.countryName}`,
+                }))}
               />
             )}
             {table.getColumn("interests") && (

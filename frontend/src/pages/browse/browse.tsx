@@ -24,9 +24,8 @@ function getData(): UserRow[] {
 }
 
 export function Browse() {
-  // TODO: Place use users here
-  const data = getData();
 
+  const data = getData();
   return (
     <AppLayout>
       <DataTable columns={columns} data={data} />
