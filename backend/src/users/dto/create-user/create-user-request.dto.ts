@@ -1,4 +1,5 @@
 import { IsString, MinLength, MaxLength, IsEmail, Matches, IsNotEmpty } from 'class-validator';
+import { IsStrongPassword } from '../../../common/validators';
 
 export class CreateUserRequestDto {
   @IsString({ message: 'Email must be a string' })
@@ -6,13 +7,7 @@ export class CreateUserRequestDto {
   @IsEmail({}, { message: 'Email must be a valid email address' })
   email: string;
 
-  @IsString({ message: 'Password must be a string' })
-  @IsNotEmpty({ message: 'Password is required' })
-  @MinLength(12, { message: 'Password must be at least 12 characters long' })
-  @Matches(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
-  @Matches(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
-  @Matches(/\d/, { message: 'Password must contain at least one number' })
-  @Matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, { message: 'Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;":\\|,.<>/?)' })
+  @IsStrongPassword()
   password: string;
 
   @IsString({ message: 'First name must be a string' })
