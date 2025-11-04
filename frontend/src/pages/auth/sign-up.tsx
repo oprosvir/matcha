@@ -50,7 +50,7 @@ const schema = z
       .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, {
         message:
           "Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;':\",./<>?)",
-      }), //TODO: Check if it doesn't contain common english words
+      }),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {

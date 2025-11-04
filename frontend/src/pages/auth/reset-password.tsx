@@ -24,7 +24,7 @@ const schema = z
           "Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;':\",./<>?)",
       }),
     confirmPassword: z.string(),
-  }) // TODO: Check if it contains common english words
+  })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],

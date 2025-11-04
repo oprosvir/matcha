@@ -15,7 +15,7 @@ export const authApi = {
   signUp: async (email: string, password: string, firstName: string, lastName: string, username: string): Promise<AccessToken> => {
     const response = await parseApiResponse(apiClient.post('/auth/sign-up', { email, password, firstName, lastName, username }), createApiResponseSchema(AccessTokenSchema));
     if (!response.success) {
-      throw new Error(getToastMessage(response.messageKey));
+      throw new Error(getToastMessage(response.messageKey, response.error?.details));
     }
     return response.data;
   },
@@ -23,7 +23,7 @@ export const authApi = {
   signIn: async (username: string, password: string): Promise<AccessToken> => {
     const response = await parseApiResponse(apiClient.post('/auth/sign-in', { username, password }), createApiResponseSchema(AccessTokenSchema));
     if (!response.success) {
-      throw new Error(getToastMessage(response.messageKey));
+      throw new Error(getToastMessage(response.messageKey, response.error?.details));
     }
     return response.data;
   },
@@ -53,7 +53,7 @@ export const authApi = {
   resetPassword: async (token: string, password: string): Promise<void> => {
     const response = await parseApiResponse(apiClient.post('/auth/reset-password', { token: token, password: password }), createApiResponseSchema(ResetPasswordResponseSchema));
     if (!response.success) {
-      throw new Error(getToastMessage(response.messageKey));
+      throw new Error(getToastMessage(response.messageKey, response.error?.details));
     }
   },
 

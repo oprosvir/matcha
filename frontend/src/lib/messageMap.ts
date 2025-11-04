@@ -25,6 +25,9 @@ export const messageMap: Record<string, string> = {
   "ERROR_UNKNOWN": "An unknown error occurred. Please try again.",
 }
 
-export const getToastMessage = (key: string) => {
-  return messageMap[key];
+export const getToastMessage = (key: string, errorDetails?: string) => {
+  if (errorDetails) {
+    return errorDetails;
+  }
+  return messageMap[key] || messageMap['ERROR_UNKNOWN'];
 }
