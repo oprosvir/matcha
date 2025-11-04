@@ -26,7 +26,7 @@ export const messageMap: Record<string, string> = {
 }
 
 export const getToastMessage = (key: string, errorDetails?: string) => {
-  if (errorDetails) {
+  if (key === 'ERROR_VALIDATION_FAILED' && errorDetails) {
     return errorDetails;
   }
   return messageMap[key] || messageMap['ERROR_UNKNOWN'];

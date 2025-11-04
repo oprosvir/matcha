@@ -2,7 +2,7 @@ import { registerDecorator, ValidationArguments } from 'class-validator';
 import { getWordsList } from 'most-common-words-by-language';
 
 const COMMON_WORDS = new Set(
-  getWordsList('english', 2000).map((word) => word.toLowerCase())
+  getWordsList('english', 10000).filter(w => w.length >= 3).map((word) => word.toLowerCase())
 );
 
 const RULES = [
@@ -14,8 +14,8 @@ const RULES = [
     message: 'Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;":\\|,.<>/?)' },
   {
     test: (v: string) => {
-      const words = v.toLowerCase().split(/[^a-z]+/);
-      return !words.some((w) => w.length >= 3 && COMMON_WORDS.has(w));
+      const lowercase = v.toLowerCase();
+      return !Array.from(COMMON_WORDS).some((word: string) => lowercase.includes(word));
     },
     message: 'Password contains common English words. Please choose a more unique password',
   },
