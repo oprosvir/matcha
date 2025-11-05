@@ -134,7 +134,7 @@ This is a school project to create a dating website that facilitates connections
 - Frontend: http://localhost:5173
 - Backend:  http://localhost:3000
 - Database: http://localhost:5432
-- Redis:    http://localhost:6379
+- Redis:    http://localhost:6380
 
 ### Backend Development (in backend/)
 ```bash

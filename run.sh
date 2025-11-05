@@ -28,7 +28,7 @@ case $COMMAND in
     echo -e "Frontend: ${BLUE}http://localhost:5173${NC}"
     echo -e "Backend:  ${BLUE}http://localhost:3000${NC}"
     echo -e "Database: ${BLUE}http://localhost:5432${NC}"
-    echo -e "Redis:    ${BLUE}http://localhost:6379${NC}"
+    echo -e "Redis:    ${BLUE}http://localhost:6380${NC}"
     ;;
   
   stop)
@@ -47,7 +47,7 @@ case $COMMAND in
     echo -e "Frontend: ${BLUE}http://localhost:5173${NC}"
     echo -e "Backend:  ${BLUE}http://localhost:3000${NC}"
     echo -e "Database: ${BLUE}http://localhost:5432${NC}"
-    echo -e "Redis:    ${BLUE}http://localhost:6379${NC}"
+    echo -e "Redis:    ${BLUE}http://localhost:6380${NC}"
     ;;
   
   logs)
@@ -60,24 +60,10 @@ case $COMMAND in
     ;;
 
   clear)
-    echo -e "${YELLOW}⏹  Clearing the data of the services...${NC}"
-
-    # Fix permissions and remove data
-    if [ -d "./db/data" ]; then
-      echo "🗑️  Removing database data..."
-      sudo chown -R "$(id -u)":"$(id -g)" "./db/data"
-      rm -rf ./db/data
-    fi
-
-    if [ -d "./redis/data" ]; then
-      echo "🗑️  Removing redis data..."
-      sudo chown -R "$(id -u)":"$(id -g)" "./redis/data"
-      rm -rf ./redis/data
-    fi
-
-    echo -e "${GREEN}✅ Data cleared${NC}"
+    echo -e "${YELLOW}⏹  Clearing Docker volumes and restarting...${NC}"
+    docker compose down -v
+    echo -e "${GREEN}✅ Volumes cleared${NC}"
     echo ""
-
     ./run.sh restart
     ;;
   
@@ -89,9 +75,9 @@ case $COMMAND in
     echo "Commands:"
     echo "  start    - Start all services (default)"
     echo "  stop     - Stop all services"
-    echo "  restart  - Restart all services"
+    echo "  restart  - Restart all services with fresh build"
     echo "  logs     - Show logs (optional: ./run.sh logs backend)"
-    echo "  clear    - Restart and clear the data of the services (db and redis)"
+    echo "  clear    - Clear Docker volumes (db and redis) and restart"
     exit 1
     ;;
 esac
