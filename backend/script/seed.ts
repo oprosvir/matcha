@@ -48,6 +48,13 @@ const MAIN_USER_FIRSTNAME = process.env.DEV_ACCOUNT_FIRSTNAME || 'Test';
 const MAIN_USER_LASTNAME = process.env.DEV_ACCOUNT_LASTNAME || 'User';
 const MAIN_USER_PASSWORD = process.env.DEV_ACCOUNT_PASSWORD || 'password123';
 
+// Second test user with incomplete profile
+const INCOMPLETE_USER_EMAIL = process.env.DEV_INCOMPLETE_EMAIL || 'incomplete@example.com';
+const INCOMPLETE_USER_USERNAME = process.env.DEV_INCOMPLETE_USERNAME || 'incomplete';
+const INCOMPLETE_USER_FIRSTNAME = process.env.DEV_INCOMPLETE_FIRSTNAME || 'Incomplete';
+const INCOMPLETE_USER_LASTNAME = process.env.DEV_INCOMPLETE_LASTNAME || 'Profile';
+const INCOMPLETE_USER_PASSWORD = process.env.DEV_INCOMPLETE_PASSWORD || 'password123';
+
 const interests = [
   ('#Travel'),
   ('#Music'),
@@ -221,6 +228,29 @@ async function seedDatabase() {
       new Date(),
       mainUserBirthDate,
       true
+    ]);
+
+    // Create second test user with incomplete profile
+    const incompleteUserId = faker.string.uuid();
+    const incompleteUserPasswordHash = await bcrypt.hash(INCOMPLETE_USER_PASSWORD, 10);
+
+    console.log('👤 Creating incomplete test user...');
+
+    const incompleteUserBirthDate = new Date();
+    incompleteUserBirthDate.setFullYear(incompleteUserBirthDate.getFullYear() - 22); // 22 years old
+
+    await client.query(`
+      INSERT INTO users (id, username, email, is_email_verified, password_hash, first_name, last_name, profile_completed)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, [
+      incompleteUserId,
+      INCOMPLETE_USER_USERNAME,
+      INCOMPLETE_USER_EMAIL,
+      true,
+      incompleteUserPasswordHash,
+      INCOMPLETE_USER_FIRSTNAME,
+      INCOMPLETE_USER_LASTNAME,
+      false // profile not completed
     ]);
 
     // Generate all other users
