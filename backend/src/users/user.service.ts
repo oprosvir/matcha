@@ -193,7 +193,6 @@ export class UserService {
         firstName: getUsersRequestDto.firstName,
       };
 
-      console.log('Cursor:', getUsersRequestDto.cursor);
       const users = await this.usersRepository.getUsers(userId, filters, MAX_PAGE_SIZE + 1, getUsersRequestDto.sort);
 
       const likedUserIds = await this.likesRepository.findAllUsersWhoUserLiked(userId);
@@ -240,7 +239,6 @@ export class UserService {
               break;
           }
           nextCursor = `${sortValue},${lastTimeActive},${createdAt},${lastUser.id}`;
-          console.log('nextCursor:', nextCursor);
         } else {
           nextCursor = `${lastTimeActive},${createdAt},${lastUser.id}`;
         }
@@ -363,11 +361,9 @@ export class UserService {
         throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
       }
       if (validatedData.data.status === 'fail') {
-        console.log(`Failed to resolve location for IP address: ${validatedData.data.message || 'Unknown error'}`);
         throw new CustomHttpException('FAILED_TO_RESOLVE_LOCATION', `Failed to resolve location for IP address: ${validatedData.data.message || 'Unknown error'}`, 'ERROR_FAILED_TO_RESOLVE_LOCATION', HttpStatus.BAD_REQUEST);
       }
       if (!validatedData.data.lon || !validatedData.data.lat) {
-        console.log('IP-API returned a response with no longitude or latitude');
         throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
       }
       return { longitude: validatedData.data.lon, latitude: validatedData.data.lat };

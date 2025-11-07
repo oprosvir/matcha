@@ -105,14 +105,12 @@ export const userApi = {
       queryParams.append('sort', JSON.stringify(params.sort));
     }
 
-    console.log('queryParams:', queryParams.toString());
-
     const url = `/users/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await parseApiResponse(apiClient.get(url), createApiResponseSchema(GetUsersResponseSchema));
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
     }
-    console.log('getUsers API response:', response.data);
+
     return response.data;
   },
 };
