@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Toggle } from "@/components/ui/toggle";
 import { Heart } from "lucide-react";
 import type { UserListItem } from "@/types/browse";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 
 export const columns: ColumnDef<UserListItem>[] = [
   {
@@ -34,11 +35,17 @@ export const columns: ColumnDef<UserListItem>[] = [
   },
   {
     accessorKey: "age",
-    header: "Age",
+    enableSorting: true,
+    header: ({ column }) => {
+      return <DataTableColumnHeader column={column} title="Age" />;
+    },
   },
   {
     accessorKey: "fameRating",
-    header: "Fame Rating",
+    enableSorting: true,
+    header: ({ column }) => {
+      return <DataTableColumnHeader column={column} title="Fame Rating" />;
+    },
     cell: ({ row }) => {
       return <div>{`${row.original.fameRating}`}</div>;
     },
@@ -64,7 +71,17 @@ export const columns: ColumnDef<UserListItem>[] = [
   },
   {
     accessorKey: "interests",
-    header: "Interests",
+    enableSorting: true,
+    header: ({ column }) => {
+      return (
+        <DataTableColumnHeader
+          column={column}
+          title="Interests"
+          firstSortingOption="least common"
+          secondSortingOption="most common"
+        />
+      );
+    },
     cell: ({ row }) => {
       return (
         <div className="max-w-[200px] overflow-x-auto">

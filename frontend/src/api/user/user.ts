@@ -80,6 +80,10 @@ export const userApi = {
     countries?: string[];
     tags?: string[];
     firstName?: string;
+    sort?: {
+      sortBy: 'age' | 'fameRating' | 'interests';
+      sortOrder: 'asc' | 'desc';
+    };
   }): Promise<GetUsersResponse> => {
     const queryParams = new URLSearchParams();
     if (params?.cursor) queryParams.append('cursor', params.cursor);
@@ -97,6 +101,9 @@ export const userApi = {
       queryParams.append('tags', params.tags.join(','));
     }
     if (params?.firstName) queryParams.append('firstName', params.firstName);
+    if (params?.sort) {
+      queryParams.append('sort', JSON.stringify(params.sort));
+    }
 
     console.log('queryParams:', queryParams.toString());
 

@@ -10,6 +10,10 @@ export interface Filters {
   locations?: string[];
   tags?: string[];
   firstName?: string;
+  sort?: {
+    sortBy: 'age' | 'fameRating' | 'interests';
+    sortOrder: 'asc' | 'desc';
+  };
 }
 
 export function useUsers(params?: Filters) {
@@ -37,6 +41,7 @@ export function useUsers(params?: Filters) {
         countries: countries.length > 0 ? countries : undefined,
         tags: params?.tags && params.tags.length > 0 ? params.tags : undefined,
         firstName: params?.firstName,
+        sort: params?.sort,
       });
     },
     getNextPageParam: (lastPage: GetUsersResponse) => {

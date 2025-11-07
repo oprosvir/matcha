@@ -4,6 +4,7 @@ import { DatabaseService } from 'src/database/database.service';
 import { CreateUserRequestDto } from '../dto';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import { Gender, SexualOrientation } from '../enums/user.enums';
+import { Sort, SortOrder } from '../dto/get-users/get-users-request.dto';
 
 export interface UserPhoto {
   id: string;
@@ -87,6 +88,22 @@ const USER_BASE_QUERY = `
 @Injectable()
 export class UsersRepository {
   constructor(private readonly db: DatabaseService) { }
+
+  async getCommonInterestsCount(currentUserId: string, otherUserId: string): Promise<number> {
+    try {
+      const query = `
+      SELECT COUNT(DISTINCT ui1.interest_id) as count
+      FROM user_interests ui1
+      INNER JOIN user_interests ui2 ON ui1.interest_id = ui2.interest_id
+      WHERE ui1.user_id = $1 AND ui2.user_id = $2
+    `;
+      const result = await this.db.query<{ count: number }>(query, [currentUserId, otherUserId]);
+      return result.rows[0]?.count || 0;
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
   async findById(id: string): Promise<User | null> {
     try {
@@ -403,6 +420,7 @@ export class UsersRepository {
       firstName?: string;
     },
     limit: number,
+    sort?: Sort,
   ): Promise<User[]> {
     try {
       const conditions: string[] = [];
@@ -509,34 +527,111 @@ export class UsersRepository {
         paramIndex += 2;
       }
 
-      // Pagination:
-      // last_time_active > created_at > id
-      // If last_time_active is null we use created_at and if created_at is equal we use the smallest id.
+      // Pagination cursor handling
+      // When sorting is applied, cursor format: sortValue,last_time_active,created_at,id
+      // When no sorting, cursor format: last_time_active,created_at,id
       if (filters.cursor) {
-        const [cursorLastTimeActive, cursorCreatedAt, cursorId] = filters.cursor.split(',');
-        const cursorLastTimeActiveValue = cursorLastTimeActive === 'null' ? null : cursorLastTimeActive;
+        const cursorParts = filters.cursor.split(',');
+        if (sort) {
+          // Custom sort: cursor contains sort value + tiebreakers
+          const cursorSortValue = cursorParts[0];
+          const cursorLastTimeActive = cursorParts[1] === 'null' ? null : cursorParts[1];
+          const cursorCreatedAt = cursorParts[2];
+          const cursorId = cursorParts[3];
 
-        if (cursorLastTimeActiveValue === null) {
-          conditions.push(`u.last_time_active IS NULL AND (u.created_at < $${paramIndex}::timestamp OR (u.created_at = $${paramIndex}::timestamp AND u.id < $${paramIndex + 1}::uuid))`);
-          params.push(cursorCreatedAt);
-          params.push(cursorId);
-          paramIndex += 2;
+          switch (sort.sortBy) {
+            case 'age':
+              const ageValue = parseFloat(cursorSortValue);
+              const ageOperator = sort.sortOrder === SortOrder.ASC ? '>' : '<';
+              conditions.push(`(EXTRACT(YEAR FROM AGE(u.date_of_birth)) ${ageOperator} $${paramIndex} OR (EXTRACT(YEAR FROM AGE(u.date_of_birth)) = $${paramIndex} AND (u.last_time_active IS NULL OR u.last_time_active < $${paramIndex + 1}::timestamp OR (u.last_time_active = $${paramIndex + 1}::timestamp AND u.created_at < $${paramIndex + 2}::timestamp) OR (u.last_time_active = $${paramIndex + 1}::timestamp AND u.created_at = $${paramIndex + 2}::timestamp AND u.id < $${paramIndex + 3}::uuid))))`);
+              params.push(ageValue);
+              params.push(cursorLastTimeActive || new Date().toISOString());
+              params.push(cursorCreatedAt);
+              params.push(cursorId);
+              paramIndex += 4;
+              break;
+            case 'fameRating':
+              const fameValue = parseFloat(cursorSortValue);
+              const fameOperator = sort.sortOrder === SortOrder.ASC ? '>' : '<';
+              conditions.push(`(u.fame_rating ${fameOperator} $${paramIndex} OR (u.fame_rating = $${paramIndex} AND (u.last_time_active IS NULL OR u.last_time_active < $${paramIndex + 1}::timestamp OR (u.last_time_active = $${paramIndex + 1}::timestamp AND u.created_at < $${paramIndex + 2}::timestamp) OR (u.last_time_active = $${paramIndex + 1}::timestamp AND u.created_at = $${paramIndex + 2}::timestamp AND u.id < $${paramIndex + 3}::uuid))))`);
+              params.push(fameValue);
+              params.push(cursorLastTimeActive || new Date().toISOString());
+              params.push(cursorCreatedAt);
+              params.push(cursorId);
+              paramIndex += 4;
+              break;
+            case 'interests':
+              const interestsValue = parseFloat(cursorSortValue);
+              const interestsOperator = sort.sortOrder === SortOrder.DESC ? '<' : '>';
+              conditions.push(`((SELECT COUNT(DISTINCT ui2.interest_id) FROM user_interests ui2 WHERE ui2.user_id = u.id AND ui2.interest_id IN (SELECT interest_id FROM user_interests WHERE user_id = $${paramIndex})) ${interestsOperator} $${paramIndex + 1} OR ((SELECT COUNT(DISTINCT ui2.interest_id) FROM user_interests ui2 WHERE ui2.user_id = u.id AND ui2.interest_id IN (SELECT interest_id FROM user_interests WHERE user_id = $${paramIndex})) = $${paramIndex + 1} AND (u.last_time_active IS NULL OR u.last_time_active < $${paramIndex + 2}::timestamp OR (u.last_time_active = $${paramIndex + 2}::timestamp AND u.created_at < $${paramIndex + 3}::timestamp) OR (u.last_time_active = $${paramIndex + 2}::timestamp AND u.created_at = $${paramIndex + 3}::timestamp AND u.id < $${paramIndex + 4}::uuid))))`);
+              params.push(currentUserId);
+              params.push(interestsValue);
+              params.push(cursorLastTimeActive || new Date().toISOString());
+              params.push(cursorCreatedAt);
+              params.push(cursorId);
+              paramIndex += 5;
+              break;
+          }
         } else {
-          conditions.push(`(u.last_time_active IS NULL OR u.last_time_active < $${paramIndex}::timestamp OR (u.last_time_active = $${paramIndex}::timestamp AND u.created_at < $${paramIndex + 1}::timestamp) OR (u.last_time_active = $${paramIndex}::timestamp AND u.created_at = $${paramIndex + 1}::timestamp AND u.id < $${paramIndex + 2}::uuid))`);
-          params.push(cursorLastTimeActiveValue);
-          params.push(cursorCreatedAt);
-          params.push(cursorId);
-          paramIndex += 3;
+          // Default sort: cursor contains last_time_active,created_at,id
+          const [cursorLastTimeActive, cursorCreatedAt, cursorId] = cursorParts;
+          const cursorLastTimeActiveValue = cursorLastTimeActive === 'null' ? null : cursorLastTimeActive;
+
+          if (cursorLastTimeActiveValue === null) {
+            conditions.push(`u.last_time_active IS NULL AND (u.created_at < $${paramIndex}::timestamp OR (u.created_at = $${paramIndex}::timestamp AND u.id < $${paramIndex + 1}::uuid))`);
+            params.push(cursorCreatedAt);
+            params.push(cursorId);
+            paramIndex += 2;
+          } else {
+            conditions.push(`(u.last_time_active IS NULL OR u.last_time_active < $${paramIndex}::timestamp OR (u.last_time_active = $${paramIndex}::timestamp AND u.created_at < $${paramIndex + 1}::timestamp) OR (u.last_time_active = $${paramIndex}::timestamp AND u.created_at = $${paramIndex + 1}::timestamp AND u.id < $${paramIndex + 2}::uuid))`);
+            params.push(cursorLastTimeActiveValue);
+            params.push(cursorCreatedAt);
+            params.push(cursorId);
+            paramIndex += 3;
+          }
         }
       }
 
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
+      // Sorting clause
+      let orderByClause = '';
+      if (sort) {
+        switch (sort.sortBy) {
+          case 'age':
+            const ageSortOrder = sort.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+            orderByClause = `ORDER BY EXTRACT(YEAR FROM AGE(u.date_of_birth)) ${ageSortOrder}`;
+            break;
+          case 'fameRating':
+            const fameSortOrder = sort.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+            orderByClause = `ORDER BY u.fame_rating ${fameSortOrder}`;
+            break;
+          case 'interests':
+            const interestsSortOrder = sort.sortOrder === SortOrder.DESC ? 'DESC' : 'ASC';
+            orderByClause = `ORDER BY (
+              SELECT COUNT(DISTINCT ui2.interest_id)
+              FROM user_interests ui2
+              WHERE ui2.user_id = u.id
+              AND ui2.interest_id IN (
+                SELECT interest_id
+                FROM user_interests
+                WHERE user_id = $${paramIndex}
+              )
+            ) ${interestsSortOrder}`;
+            params.push(currentUserId);
+            paramIndex++;
+            break;
+        }
+        orderByClause += `, u.last_time_active DESC NULLS LAST, u.created_at DESC, u.id DESC`;
+      } else {
+        orderByClause = `ORDER BY u.last_time_active DESC NULLS LAST, u.created_at DESC, u.id DESC`;
+      }
+
       const query = `
         ${USER_BASE_QUERY}
         ${whereClause}
         GROUP BY u.id
-        ORDER BY u.last_time_active DESC NULLS LAST, u.created_at DESC, u.id DESC
+        ${orderByClause}
         LIMIT $${paramIndex}
       `;
       params.push(limit);

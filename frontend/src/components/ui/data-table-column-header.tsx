@@ -1,6 +1,5 @@
 import type { Column } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,9 +38,9 @@ export function DataTableColumnHeader<TData, TValue>({
             className="data-[state=open]:bg-accent -ml-3 h-8"
           >
             <span>{title}</span>
-            {column.getIsSorted() === secondSortingOption ? (
+            {column.getIsSorted() === "desc" ? (
               <ArrowDown />
-            ) : column.getIsSorted() === firstSortingOption ? (
+            ) : column.getIsSorted() === "asc" ? (
               <ArrowUp />
             ) : (
               <ChevronsUpDown />

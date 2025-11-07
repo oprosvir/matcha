@@ -193,7 +193,8 @@ export class UserService {
         firstName: getUsersRequestDto.firstName,
       };
 
-      const users = await this.usersRepository.getUsers(userId, filters, MAX_PAGE_SIZE + 1);
+      console.log('Cursor:', getUsersRequestDto.cursor);
+      const users = await this.usersRepository.getUsers(userId, filters, MAX_PAGE_SIZE + 1, getUsersRequestDto.sort);
 
       const likedUserIds = await this.likesRepository.findAllUsersWhoUserLiked(userId);
       const likedUserIdsSet = new Set(likedUserIds.map(like => like.to_user_id));
@@ -213,7 +214,36 @@ export class UserService {
           ? lastUser.last_time_active.toISOString()
           : 'null';
         const createdAt = lastUser.created_at.toISOString();
-        nextCursor = `${lastTimeActive},${createdAt},${lastUser.id}`;
+
+        if (getUsersRequestDto.sort) {
+          let sortValue: string;
+          switch (getUsersRequestDto.sort.sortBy) {
+            case 'age':
+              if (!lastUser.date_of_birth) {
+                sortValue = '999';
+              } else {
+                const birthDate = new Date(lastUser.date_of_birth);
+                const today = new Date();
+                const age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                const dayDiff = today.getDate() - birthDate.getDate();
+                const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+                sortValue = actualAge.toString();
+              }
+              break;
+            case 'fameRating':
+              sortValue = lastUser.fame_rating.toString();
+              break;
+            case 'interests':
+              const commonInterestsCount = await this.usersRepository.getCommonInterestsCount(userId, lastUser.id);
+              sortValue = commonInterestsCount.toString();
+              break;
+          }
+          nextCursor = `${sortValue},${lastTimeActive},${createdAt},${lastUser.id}`;
+          console.log('nextCursor:', nextCursor);
+        } else {
+          nextCursor = `${lastTimeActive},${createdAt},${lastUser.id}`;
+        }
       }
 
       return {

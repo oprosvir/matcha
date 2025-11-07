@@ -1,5 +1,28 @@
 import { IsArray, IsNumber, IsOptional, IsString, Min, Max, MinLength, MaxLength, ArrayMinSize, ArrayMaxSize } from "class-validator";
 import { Type, Transform } from "class-transformer";
+import { z } from "zod";
+
+export enum SortOrder {
+  ASC = 'asc',
+  DESC = 'desc',
+}
+
+export interface SortByAge {
+  sortBy: 'age';
+  sortOrder: SortOrder;
+}
+
+export interface SortByFameRating {
+  sortBy: 'fameRating';
+  sortOrder: SortOrder;
+}
+
+export interface SortByInterests {
+  sortBy: 'interests';
+  sortOrder: SortOrder;
+}
+
+export type Sort = SortByAge | SortByFameRating | SortByInterests;
 
 export class GetUsersRequestDto {
   @IsOptional()
@@ -72,4 +95,17 @@ export class GetUsersRequestDto {
   @MinLength(1, { message: 'First name must be at least 1 character long' })
   @MaxLength(50, { message: 'First name must be at most 50 characters long' })
   firstName?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
+  sort?: Sort;
 }

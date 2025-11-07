@@ -3,6 +3,7 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  type SortingState,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -70,6 +71,31 @@ export function DataTable<TData, TValue>({
 
   const [activeTab, setActiveTab] = useState<string>("browse-all");
 
+  const [localSorting, setLocalSorting] = useState<SortingState>(() => {
+    if (filters?.sort) {
+      return [
+        {
+          id: filters.sort.sortBy,
+          desc: filters.sort.sortOrder === "desc",
+        },
+      ];
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    if (filters?.sort) {
+      setLocalSorting([
+        {
+          id: filters.sort.sortBy,
+          desc: filters.sort.sortOrder === "desc",
+        },
+      ]);
+    } else {
+      setLocalSorting([]);
+    }
+  }, [filters?.sort]);
+
   const table = useReactTable({
     data,
     columns,
@@ -77,6 +103,14 @@ export function DataTable<TData, TValue>({
     manualPagination: true,
     manualFiltering: true,
     manualSorting: true,
+    state: {
+      sorting: localSorting,
+    },
+    onSortingChange: (updater) => {
+      const newSorting =
+        typeof updater === "function" ? updater(localSorting) : updater;
+      setLocalSorting(newSorting);
+    },
   });
 
   // Infinite scroll
@@ -121,6 +155,14 @@ export function DataTable<TData, TValue>({
 
     const tags = interestsFilterRef.current?.getValue() || [];
 
+    const sortState = localSorting.length > 0 ? localSorting[0] : null;
+    const sort = sortState
+      ? {
+          sortBy: sortState.id as "age" | "fameRating" | "interests",
+          sortOrder: (sortState.desc ? "desc" : "asc") as "asc" | "desc",
+        }
+      : undefined;
+
     setFilters({
       firstName,
       minAge,
@@ -129,6 +171,7 @@ export function DataTable<TData, TValue>({
       maxFame,
       locations,
       tags,
+      sort,
     });
   };
 
