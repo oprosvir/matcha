@@ -110,7 +110,7 @@ export const columns: ColumnDef<UserRow>[] = [
       return (
         <div className="flex gap-2">
           <Toggle
-            onPressedChange={(pressed: boolean) => {
+            onPressedChange={() => {
               row.original.liked = !row.original.liked;
             }}
             pressed={row.original.liked}

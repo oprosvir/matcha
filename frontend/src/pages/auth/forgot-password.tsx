@@ -36,7 +36,7 @@ export function ForgotPassword() {
   });
 
   const onSubmit = (data: FormData) => {
-    sendPasswordResetEmail({ email: data.email });
+    sendPasswordResetEmail(data.email);
   };
 
   return (
