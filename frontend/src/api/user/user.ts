@@ -12,8 +12,11 @@ interface UpdateProfileRequest {
   gender?: Gender;
   sexualOrientation?: SexualOrientation;
   biography?: string;
-  latitude?: number;
-  longitude?: number;
+}
+
+interface UpdateLocationRequest {
+  latitude: number;
+  longitude: number;
 }
 
 interface CompleteProfileRequest {
@@ -22,12 +25,23 @@ interface CompleteProfileRequest {
   sexualOrientation: SexualOrientation;
   biography: string;
   interestIds: string[];
+  latitude: number;
+  longitude: number;
 }
 
 const FindAllMatchesResponseSchema = z.object({ users: MatchesSchema });
 const GetOwnProfileResponseSchema = z.object({ user: UserSchema });
 const UpdateProfileResponseSchema = z.object({ user: UserSchema });
+const UpdateLocationResponseSchema = z.object({ user: UserSchema });
 const CompleteProfileResponseSchema = z.object({ user: UserSchema });
+const ResolveLocationByCoordsResponseSchema = z.object({
+  cityName: z.string(),
+  countryName: z.string()
+});
+const ResolveLocationByCityResponseSchema = z.object({
+  latitude: z.number(),
+  longitude: z.number()
+});
 
 export const userApi = {
   getLocationList: async (): Promise<LocationEntry[]> => {
@@ -56,6 +70,14 @@ export const userApi = {
 
   updateProfile: async (request: UpdateProfileRequest): Promise<{ data: User; messageKey: string }> => {
     const response = await parseApiResponse(apiClient.put('/users/me', request), createApiResponseSchema(UpdateProfileResponseSchema));
+    if (!response.success) {
+      throw new Error(getToastMessage(response.messageKey));
+    }
+    return { data: response.data.user, messageKey: response.messageKey };
+  },
+
+  updateLocation: async (request: UpdateLocationRequest): Promise<{ data: User; messageKey: string }> => {
+    const response = await parseApiResponse(apiClient.put('/users/me/location', request), createApiResponseSchema(UpdateLocationResponseSchema));
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
     }
@@ -111,6 +133,45 @@ export const userApi = {
       throw new Error(getToastMessage(response.messageKey));
     }
 
+    return response.data;
+  },
+
+  resolveLocationByCoordinates: async (latitude: number, longitude: number): Promise<{ cityName: string; countryName: string }> => {
+    const response = await parseApiResponse(
+      apiClient.get('/users/resolve-location-by-latitude-and-longitude', {
+        params: { latitude, longitude }
+      }),
+      createApiResponseSchema(ResolveLocationByCoordsResponseSchema)
+    );
+    if (!response.success) {
+      throw new Error(getToastMessage(response.messageKey));
+    }
+    return response.data;
+  },
+
+  resolveLocationByCity: async (cityName: string, countryName: string): Promise<{ latitude: number; longitude: number }> => {
+    const response = await parseApiResponse(
+      apiClient.get('/users/resolve-location-by-city-name-and-country-name', {
+        params: { cityName, countryName }
+      }),
+      createApiResponseSchema(ResolveLocationByCityResponseSchema)
+    );
+    if (!response.success) {
+      throw new Error(getToastMessage(response.messageKey));
+    }
+    return response.data;
+  },
+
+  resolveLocationByIpAddress: async (ipAddress: string): Promise<{ latitude: number; longitude: number }> => {
+    const response = await parseApiResponse(
+      apiClient.get('/users/resolve-location-by-ip-address', {
+        params: { ipAddress }
+      }),
+      createApiResponseSchema(ResolveLocationByCityResponseSchema) // Same schema - returns lat/long
+    );
+    if (!response.success) {
+      throw new Error(getToastMessage(response.messageKey));
+    }
     return response.data;
   },
 };

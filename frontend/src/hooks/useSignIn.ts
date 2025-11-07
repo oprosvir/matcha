@@ -1,12 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 import { authApi } from "@/api/auth/auth";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import type { AccessToken } from "@/types/user";
 
 export function useSignIn() {
-  const navigate = useNavigate();
   const { signIn } = useAuth();
 
   const signInMutation = useMutation<AccessToken, Error, { username: string, password: string }>({
@@ -14,7 +12,7 @@ export function useSignIn() {
     onSuccess: (accessToken: AccessToken) => {
       signIn(accessToken.accessToken);
       toast.success('Signed in successfully 🎉');
-      navigate("/");
+      // Navigation handled by PublicRoute guard - it will automatically redirect to "/"
     },
     onError: (error) => {
       toast.error(error.message);

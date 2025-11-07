@@ -90,11 +90,10 @@ export function Dashboard() {
                   )}
 
                   {/* Location */}
-                  {/* TODO: replace with actual location display when available */}
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="w-4 h-4" />
-                    {user.latitude && user.longitude ? (
-                      <span>Location set</span>
+                    {user.cityName && user.countryName ? (
+                      <span>{user.cityName}, {user.countryName}</span>
                     ) : (
                       <span className="text-muted-foreground">
                         Location not set

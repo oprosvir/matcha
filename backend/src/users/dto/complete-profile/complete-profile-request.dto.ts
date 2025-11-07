@@ -1,4 +1,4 @@
-import { IsString, MinLength, MaxLength, IsEnum, IsDateString, IsNotEmpty, IsArray, IsUUID, ArrayMinSize, ArrayMaxSize, IsOptional, IsNumber, Min, Max, ValidateIf } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsEnum, IsDateString, IsNotEmpty, IsArray, IsUUID, ArrayMinSize, ArrayMaxSize, IsNumber, Min, Max } from 'class-validator';
 import { Gender, SexualOrientation } from '../../enums/user.enums';
 import { IsMinAge, IsArrayUnique } from 'src/common/validators';
 
@@ -29,17 +29,15 @@ export class CompleteProfileRequestDto {
   @IsArrayUnique()
   interestIds: string[];
 
-  @ValidateIf((o) => o.longitude !== undefined) // Can't receive only one of the two
-  @IsNotEmpty({ message: 'Latitude is required when longitude is provided' })
+  @IsNotEmpty({ message: 'Latitude is required' })
   @IsNumber({}, { message: 'Latitude must be a number' })
   @Min(-90, { message: 'Latitude must be between -90 and 90' })
   @Max(90, { message: 'Latitude must be between -90 and 90' })
-  latitude?: number;
+  latitude: number;
 
-  @ValidateIf((o) => o.latitude !== undefined) // Can't receive only one of the two
-  @IsNotEmpty({ message: 'Longitude is required when latitude is provided' })
+  @IsNotEmpty({ message: 'Longitude is required' })
   @IsNumber({}, { message: 'Longitude must be a number' })
   @Min(-180, { message: 'Longitude must be between -180 and 180' })
   @Max(180, { message: 'Longitude must be between -180 and 180' })
-  longitude?: number;
+  longitude: number;
 }

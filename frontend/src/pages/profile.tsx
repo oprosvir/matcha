@@ -4,6 +4,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { ProfileForm } from "@/components/ProfileForm";
 import { AppLayout } from "@/components/layouts/AppLayout";
 import { InterestsSelector } from "@/components/InterestsSelector";
+import { LocationSelector } from "@/components/LocationSelector";
 
 export function Profile() {
   const { user, isLoading, isSuccess } = useUser();
@@ -48,6 +49,30 @@ export function Profile() {
           </CardHeader>
           <CardContent>
             <ProfileForm user={user} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Location</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Update your location to help us show you better matches in your area
+            </p>
+            <LocationSelector
+              standalone
+              currentLocation={
+                user.latitude && user.longitude
+                  ? {
+                      latitude: user.latitude,
+                      longitude: user.longitude,
+                      cityName: user.cityName || undefined,
+                      countryName: user.countryName || undefined,
+                    }
+                  : null
+              }
+            />
           </CardContent>
         </Card>
 

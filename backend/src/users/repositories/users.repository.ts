@@ -184,63 +184,45 @@ export class UsersRepository {
     }
   }
 
-  async completeProfile(
+  async updateLocation(
     userId: string,
-    dto: {
-      dateOfBirth: string;
-      gender: Gender;
-      sexualOrientation: SexualOrientation;
-      biography: string;
-      location: {
-        latitude: number;
-        longitude: number;
-        cityName: string;
-        countryName: string;
-      }
+    location: {
+      latitude: number;
+      longitude: number;
+      cityName: string;
+      countryName: string;
     },
     client?: PoolClient,
   ): Promise<User> {
     const query = `
       WITH updated_user AS (
         UPDATE users
-        SET date_of_birth = $1, 
-            gender = $2,
-            sexual_orientation = $3,
-            biography = $4,
-            profile_completed = TRUE,
+        SET latitude = $1,
+            longitude = $2,
+            city_name = $3,
+            country_name = $4,
             updated_at = NOW()
         WHERE id = $5
-        RETURNING *
+        RETURNING id
       )
-      SELECT u.*,
-        COALESCE(
-          (SELECT jsonb_agg(jsonb_build_object('id', up.id, 'url', up.url, 'is_profile_pic', up.is_profile_pic))
-            FROM user_photos up
-            WHERE up.user_id = u.id),
-          '[]'::jsonb
-        ) AS photos,
-        COALESCE(
-          (SELECT jsonb_agg(jsonb_build_object('id', i.id, 'name', i.name))
-            FROM user_interests ui
-            JOIN interests i ON ui.interest_id = i.id
-            WHERE ui.user_id = u.id),
-          '[]'::jsonb
-        ) AS interests
-      FROM updated_user u;
+      ${USER_BASE_QUERY}
+      WHERE u.id = (SELECT id FROM updated_user)
+      GROUP BY u.id
     `;
 
     const values = [
-      dto.dateOfBirth,
-      dto.gender,
-      dto.sexualOrientation,
-      dto.biography,
-      userId
+      location.latitude,
+      location.longitude,
+      location.cityName,
+      location.countryName,
+      userId,
     ];
 
     try {
       const result = client
         ? await client.query<User>(query, values)
         : await this.db.query<User>(query, values);
+
       if (!result?.rows?.[0]) {
         throw new CustomHttpException(
           'USER_NOT_FOUND',
@@ -252,7 +234,58 @@ export class UsersRepository {
 
       return result.rows[0];
     } catch (error) {
-      // If it's already CustomHttpException, rethrow it
+      if (error instanceof CustomHttpException) {
+        throw error;
+      }
+
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async completeProfile(
+    userId: string,
+    dto: {
+      dateOfBirth: string;
+      gender: Gender;
+      sexualOrientation: SexualOrientation;
+      biography: string;
+    },
+  ): Promise<User> {
+    try {
+      const query = `
+        WITH updated_user AS (
+          UPDATE users
+          SET date_of_birth = $1,
+              gender = $2,
+              sexual_orientation = $3,
+              biography = $4,
+              profile_completed = TRUE,
+              updated_at = NOW()
+          WHERE id = $5
+          RETURNING id
+        )
+        ${USER_BASE_QUERY}
+        WHERE u.id = (SELECT id FROM updated_user)
+        GROUP BY u.id
+      `;
+
+      const values = [
+        dto.dateOfBirth,
+        dto.gender,
+        dto.sexualOrientation,
+        dto.biography,
+        userId,
+      ];
+
+      const result = await this.db.query<User>(query, values);
+
+      if (result.rows.length === 0) {
+        throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND);
+      }
+
+      return result.rows[0];
+    } catch (error) {
       if (error instanceof CustomHttpException) {
         throw error;
       }
@@ -307,23 +340,11 @@ export class UsersRepository {
         UPDATE users
         SET ${fields.join(', ')}
         WHERE id = $${paramIndex}
-        RETURNING *
+        RETURNING id
       )
-      SELECT u.*,
-        COALESCE(
-          (SELECT jsonb_agg(jsonb_build_object('id', up.id, 'url', up.url, 'is_profile_pic', up.is_profile_pic))
-            FROM user_photos up
-            WHERE up.user_id = u.id),
-          '[]'::jsonb
-        ) AS photos,
-        COALESCE(
-          (SELECT jsonb_agg(jsonb_build_object('id', i.id, 'name', i.name))
-            FROM user_interests ui
-            JOIN interests i ON ui.interest_id = i.id
-            WHERE ui.user_id = u.id),
-          '[]'::jsonb
-        ) AS interests
-      FROM updated_user u;
+      ${USER_BASE_QUERY}
+      WHERE u.id = (SELECT id FROM updated_user)
+      GROUP BY u.id
     `;
 
     try {
