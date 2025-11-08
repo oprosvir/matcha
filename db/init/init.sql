@@ -140,6 +140,7 @@ FOR EACH ROW
 EXECUTE PROCEDURE update_timestamp();
 
 CREATE INDEX idx_users_lat_lng ON users(latitude, longitude);
+CREATE INDEX idx_users_location ON users(city_name, country_name);
 CREATE INDEX idx_user_interests_interest_id ON user_interests(interest_id);
 CREATE INDEX idx_profile_views_viewed_id ON profile_views(viewed_id);
 CREATE INDEX idx_likes_to_user ON likes(to_user_id);

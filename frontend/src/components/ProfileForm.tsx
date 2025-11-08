@@ -2,7 +2,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "./ui/button";
-import { Field, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 import { useUpdateProfile } from "@/hooks/useUserProfile";
 import type { User } from "@/types/user";
@@ -70,8 +69,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
-        <Field>
-          <FieldLabel htmlFor="first-name">First Name</FieldLabel>
+        <div>
+          <label htmlFor="first-name" className="text-sm font-medium mb-2 block">First Name</label>
           <Input
             id="first-name"
             type="text"
@@ -83,10 +82,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
               {form.formState.errors.firstName.message}
             </p>
           )}
-        </Field>
+        </div>
 
-        <Field>
-          <FieldLabel htmlFor="last-name">Last Name</FieldLabel>
+        <div>
+          <label htmlFor="last-name" className="text-sm font-medium mb-2 block">Last Name</label>
           <Input
             id="last-name"
             type="text"
@@ -98,11 +97,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
               {form.formState.errors.lastName.message}
             </p>
           )}
-        </Field>
+        </div>
       </div>
 
-      <Field>
-        <FieldLabel htmlFor="date-of-birth">Date of Birth</FieldLabel>
+      <div>
+        <label htmlFor="date-of-birth" className="text-sm font-medium mb-2 block">Date of Birth</label>
         <Input
           id="date-of-birth"
           type="text"
@@ -113,7 +112,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         <p className="text-sm text-muted-foreground mt-1">
           Date of birth cannot be changed
         </p>
-      </Field>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>

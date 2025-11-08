@@ -19,15 +19,17 @@ import {
   CompleteProfileResponseDto,
   PublicUserDto,
   PrivateUserDto,
+  GetLocationListResponseDto,
+  LocationEntryDto,
 } from './dto';
 import { FindAllMatchesResponseDto } from './dto/find-all-matches/find-all-matches-response.dto';
 import { RedisRepository } from 'src/redis/repositories/redis.repository';
-import { GetLocationListResponseDto, LocationEntryDto } from './dto/get-location-list/get-location-list.dto';
 import { GetUsersRequestDto } from './dto/get-users/get-users-request.dto';
 import { GetUsersResponseDto, UserListItemDto } from './dto/get-users/get-users-response.dto';
 import { GetSuggestedUsersRequestDto } from './dto/get-suggested-users/get-suggested-users-request.dto';
 import { Gender, SexualOrientation } from './enums/user.enums';
 
+// Zod schemas for external API validation
 const IPAPIResponseSchema = z.discriminatedUnion('status', [
   z.object({
     status: z.literal('success'),
@@ -111,8 +113,8 @@ export class UserService {
       biography: user.biography,
       profileCompleted: user.profile_completed,
       fameRating: user.fame_rating,
-      latitude: user.latitude,
-      longitude: user.longitude,
+      latitude: Number(user.latitude),
+      longitude: Number(user.longitude),
       cityName: user.city_name,
       countryName: user.country_name,
       lastTimeActive: user.last_time_active ? user.last_time_active.toISOString() : null,
@@ -139,8 +141,8 @@ export class UserService {
       gender: user.gender,
       biography: user.biography,
       fameRating: user.fame_rating,
-      latitude: user.latitude,
-      longitude: user.longitude,
+      latitude: Number(user.latitude),
+      longitude: Number(user.longitude),
       cityName: user.city_name,
       countryName: user.country_name,
       lastTimeActive: user.last_time_active ? user.last_time_active.toISOString() : null,
@@ -689,39 +691,86 @@ export class UserService {
     }
   }
 
-  async completeProfile(userId: string, dto: CompleteProfileRequestDto, ipAddress?: string): Promise<CompleteProfileResponseDto> {
+  async updateLocation(userId: string, latitude: number, longitude: number): Promise<{ user: PrivateUserDto }> {
+    const oldUser = await this.usersRepository.findById(userId);
+    if (!oldUser) {
+      throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND);
+    }
+
+    if (oldUser.city_name && oldUser.country_name) {
+      try {
+        await this.decrementLocationList(oldUser.city_name, oldUser.country_name);
+      } catch (error) {
+        console.error('Failed to decrement old location counter in Redis:', error);
+      }
+    }
+
+    const location = await this.resolveLocation({
+      type: 'latitudeAndLongitude',
+      latitude,
+      longitude
+    });
+
+    const updatedUser = await this.usersRepository.updateLocation(userId, location);
+
+    try {
+      await this.incrementLocationList(location.cityName, location.countryName);
+    } catch (error) {
+      console.error('Failed to increment new location counter in Redis:', error);
+    }
+
+    return { user: this.mapUserToPrivateUserDto(updatedUser) };
+  }
+
+  async completeProfile(userId: string, dto: CompleteProfileRequestDto): Promise<CompleteProfileResponseDto> {
     const existingUser = await this.usersRepository.findById(userId);
     if (!existingUser) { throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND); }
     if (existingUser.profile_completed) { throw new CustomHttpException('PROFILE_ALREADY_COMPLETED', 'Profile already completed', 'ERROR_PROFILE_ALREADY_COMPLETED', HttpStatus.BAD_REQUEST); }
-    let location: Location;
-    if (dto.latitude && dto.longitude) {
-      location = await this.resolveLocation({ type: 'latitudeAndLongitude', latitude: dto.latitude, longitude: dto.longitude });
-    } else if (ipAddress) {
-      location = await this.resolveLocation({ type: 'ipAddress', ipAddress: ipAddress });
-    } else {
-      throw new CustomHttpException('MISSING_LOCATION_INFORMATION', 'Missing location information', 'ERROR_MISSING_LOCATION_INFORMATION', HttpStatus.BAD_REQUEST);
+
+    const location = await this.resolveLocation({
+      type: 'latitudeAndLongitude',
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+    });
+
+    if (existingUser.city_name && existingUser.country_name) {
+      await this.decrementLocationList(existingUser.city_name, existingUser.country_name);
     }
+
+    // Update interests, complete profile, and update location in a transaction
     const user = await this.db.transaction(async (client) => {
       await this.interestRepository.updateUserInterests(userId, dto.interestIds, client);
-      const user = await this.usersRepository.completeProfile(
+
+      await this.usersRepository.completeProfile(
         userId,
         {
           dateOfBirth: dto.dateOfBirth,
           gender: dto.gender,
           sexualOrientation: dto.sexualOrientation,
           biography: dto.biography,
-          location: location,
+        }
+      );
+
+      const user = await this.usersRepository.updateLocation(
+        userId,
+        {
+          latitude: dto.latitude,
+          longitude: dto.longitude,
+          cityName: location.cityName,
+          countryName: location.countryName,
         },
         client
       );
-      try {
-        await this.incrementLocationList(location.cityName, location.countryName);
-      } catch (error) {
-        console.error('Failed to increment location counter in Redis:', error);
-        throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
-      }
+
       return user;
     });
+
+    try {
+      await this.incrementLocationList(location.cityName, location.countryName);
+    } catch (error) {
+      console.error('Failed to increment location counter in Redis:', error);
+    }
+
     return { user: this.mapUserToPrivateUserDto(user) };
   }
 
@@ -733,6 +782,7 @@ export class UserService {
       sexualOrientation: dto.sexualOrientation,
       biography: dto.biography,
     });
+
     return { user: this.mapUserToPrivateUserDto(user) };
   }
 

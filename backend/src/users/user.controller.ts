@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, Query, UseGuards, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, UseGuards, HttpStatus, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { CurrentUser } from 'src/auth/current-user.decorators';
@@ -7,7 +7,9 @@ import {
   CompleteProfileRequestDto,
   GetCurrentUserResponseDto,
   UpdateProfileResponseDto,
-  CompleteProfileResponseDto
+  CompleteProfileResponseDto,
+  UpdateLocationRequestDto,
+  UpdateLocationResponseDto
 } from './dto';
 import { PrivateUserDto } from './dto';
 import { FindAllMatchesResponseDto } from './dto/find-all-matches/find-all-matches-response.dto';
@@ -48,6 +50,16 @@ export class UserController {
   ): Promise<{ success: boolean, data: UpdateProfileResponseDto, messageKey: string }> {
     const result: UpdateProfileResponseDto = await this.userService.updateProfile(userId, updateProfileDto);
     return { success: true, data: result, messageKey: 'SUCCESS_PROFILE_UPDATED' };
+  }
+
+  @Put('me/location')
+  @UseGuards(AuthGuard)
+  async updateLocation(
+    @CurrentUser('sub') userId: string,
+    @Body() updateLocationDto: UpdateLocationRequestDto,
+  ): Promise<{ success: boolean, data: UpdateLocationResponseDto, messageKey: string }> {
+    const result = await this.userService.updateLocation(userId, updateLocationDto.latitude, updateLocationDto.longitude);
+    return { success: true, data: result, messageKey: 'SUCCESS_LOCATION_UPDATED' };
   }
 
   @Get('matches')
@@ -99,20 +111,45 @@ export class UserController {
   }
 
   @Get('resolve-location-by-latitude-and-longitude')
-  async resolveLocationByLatitudeAndLongitude(@Query('latitude') latitude: number, @Query('longitude') longitude: number): Promise<{ success: boolean, data: { cityName: string, countryName: string }, messageKey: string }> {
-    const location: { cityName: string, countryName: string } = await this.userService.resolveCityNameAndCountryNameByLatitudeAndLongitude(latitude, longitude);
-    return { success: true, data: { cityName: location.cityName, countryName: location.countryName }, messageKey: 'SUCCESS_RESOLVE_LOCATION' };
+  @UseGuards(AuthGuard)
+  async resolveLocationByLatitudeAndLongitude(
+    @Query('latitude') latitude: string,
+    @Query('longitude') longitude: string,
+  ): Promise<{ success: boolean; data: { cityName: string; countryName: string }; messageKey: string }> {
+    const lat = parseFloat(latitude);
+    const lon = parseFloat(longitude);
+
+    if (isNaN(lat) || isNaN(lon)) {
+      throw new CustomHttpException('INVALID_COORDINATES', 'Invalid latitude or longitude', 'ERROR_INVALID_COORDINATES', HttpStatus.BAD_REQUEST);
+    }
+
+    const result = await this.userService.resolveCityNameAndCountryNameByLatitudeAndLongitude(lat, lon);
+    return { success: true, data: result, messageKey: 'SUCCESS_RESOLVE_LOCATION' };
   }
 
   @Get('resolve-location-by-city-name-and-country-name')
-  async resolveLocationByCityNameAndCountryName(@Query('cityName') cityName: string, @Query('countryName') countryName: string): Promise<{ success: boolean, data: { longitude: number, latitude: number }, messageKey: string }> {
-    const location: { longitude: number, latitude: number } = await this.userService.resolveLongitudeAndLatitudeByCityNameAndCountryName(cityName, countryName);
-    return { success: true, data: { longitude: location.longitude, latitude: location.latitude }, messageKey: 'SUCCESS_RESOLVE_LOCATION' };
+  @UseGuards(AuthGuard)
+  async resolveLocationByCityNameAndCountryName(
+    @Query('cityName') cityName: string,
+    @Query('countryName') countryName: string,
+  ): Promise<{ success: boolean; data: { longitude: number; latitude: number }; messageKey: string }> {
+    if (!cityName || !countryName) {
+      throw new CustomHttpException('MISSING_PARAMETERS', 'City name and country name are required', 'ERROR_MISSING_PARAMETERS', HttpStatus.BAD_REQUEST);
+    }
+
+    const result = await this.userService.resolveLongitudeAndLatitudeByCityNameAndCountryName(cityName, countryName);
+    return { success: true, data: result, messageKey: 'SUCCESS_RESOLVE_LOCATION' };
   }
 
   @Get('resolve-location-by-ip-address')
-  async resolveLocationByIPAddress(@Query('ipAddress') ipAddress: string): Promise<{ success: boolean, data: { longitude: number, latitude: number }, messageKey: string }> {
-    const location: { longitude: number, latitude: number } = await this.userService.resolveLongitudeAndLatitudeByIPAddress(ipAddress);
-    return { success: true, data: { longitude: location.longitude, latitude: location.latitude }, messageKey: 'SUCCESS_RESOLVE_LOCATION' };
+  @UseGuards(AuthGuard)
+  async resolveLocationByIpAddress(@Query('ipAddress') ipAddress: string,
+  ): Promise<{ success: boolean; data: { longitude: number; latitude: number }; messageKey: string }> {
+    if (!ipAddress) {
+      throw new CustomHttpException('MISSING_PARAMETER', 'IP address is required', 'ERROR_MISSING_PARAMETER', HttpStatus.BAD_REQUEST);
+    }
+
+    const result = await this.userService.resolveLongitudeAndLatitudeByIPAddress(ipAddress);
+    return { success: true, data: result, messageKey: 'SUCCESS_RESOLVE_LOCATION' };
   }
 }
