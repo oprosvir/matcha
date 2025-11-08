@@ -86,6 +86,7 @@ export function useWebSocket(enabled: boolean = true): UseWebSocketReturn {
 
     socketInstance.on('connect', () => {
       setIsConnected(true);
+      socketInstance.emit('ping');
     });
 
     socketInstance.on('disconnect', () => {
@@ -116,7 +117,15 @@ export function useWebSocket(enabled: boolean = true): UseWebSocketReturn {
       handleNewNotification(view);
     });
 
+    // Set up ping interval to update last_time_active
+    const pingInterval = setInterval(() => {
+      if (socketInstance.connected) {
+        socketInstance.emit('ping');
+      }
+    }, 30000);
+
     return () => {
+      clearInterval(pingInterval);
       socketInstance.disconnect();
       setSocket(null);
       setIsConnected(false);

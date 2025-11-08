@@ -203,15 +203,15 @@ export class UsersRepository {
     `;
 
     const values = [
-      dto.dateOfBirth, 
-      dto.gender, 
-      dto.sexualOrientation, 
-      dto.biography, 
+      dto.dateOfBirth,
+      dto.gender,
+      dto.sexualOrientation,
+      dto.biography,
       userId
     ];
 
     try {
-      const result = client 
+      const result = client
         ? await client.query<User>(query, values)
         : await this.db.query<User>(query, values);
       if (!result?.rows?.[0]) {
@@ -353,6 +353,18 @@ export class UsersRepository {
         lastName: row.last_name,
         profilePicture: row.profile_picture,
       }));
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async updateLastTimeActive(userId: string): Promise<void> {
+    try {
+      await this.db.query(
+        `UPDATE users SET last_time_active = CURRENT_TIMESTAMP WHERE id = $1`,
+        [userId]
+      );
     } catch (error) {
       console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
