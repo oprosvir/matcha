@@ -14,6 +14,6 @@ import { RedisModule } from '../redis/redis.module';
   imports: [DatabaseModule, InterestModule, forwardRef(() => ChatModule), forwardRef(() => NotificationModule), RedisModule],
   controllers: [UserController],
   providers: [UserService, UsersRepository, LikesRepository, BlocksRepository],
-  exports: [UserService, UsersRepository],
+  exports: [UserService, UsersRepository, BlocksRepository],
 })
 export class UserModule { }

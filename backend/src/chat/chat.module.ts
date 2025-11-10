@@ -9,6 +9,6 @@ import { UserModule } from '../users/user.module';
   imports: [DatabaseModule, forwardRef(() => UserModule)],
   controllers: [ChatController],
   providers: [ChatService, ChatRepository],
-  exports: [ChatRepository],
+  exports: [ChatRepository, ChatService],
 })
 export class ChatModule { }

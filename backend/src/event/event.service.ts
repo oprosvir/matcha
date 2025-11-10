@@ -1,4 +1,6 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, HttpStatus } from '@nestjs/common';
+import { ChatService } from 'src/chat/chat.service';
+import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import { MessagesService } from 'src/messages/message.service';
 import { UsersRepository } from 'src/users/repositories/users.repository';
 
@@ -6,10 +8,15 @@ import { UsersRepository } from 'src/users/repositories/users.repository';
 export class EventService {
   constructor(
     @Inject(forwardRef(() => MessagesService)) private readonly messagesService: MessagesService,
-    @Inject(forwardRef(() => UsersRepository)) private readonly usersRepository: UsersRepository
+    @Inject(forwardRef(() => UsersRepository)) private readonly usersRepository: UsersRepository,
+    @Inject(forwardRef(() => ChatService)) private readonly chatService: ChatService
   ) { }
 
   async handleSendMessageEvent(chatId: string, senderUserId: string, content: string): Promise<void> {
+    const canChat = await this.chatService.canChatWith(senderUserId, chatId);
+    if (!canChat) {
+      throw new CustomHttpException('FORBIDDEN', 'You are not allowed to chat with this user', 'ERROR_FORBIDDEN', HttpStatus.FORBIDDEN);
+    }
     await this.messagesService.createMessage({ chatId, senderId: senderUserId, content });
   }
 

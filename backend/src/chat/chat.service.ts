@@ -1,28 +1,45 @@
 import { Injectable, forwardRef, Inject } from '@nestjs/common';
 import { ChatRepository } from './repositories/chat.repository';
-import { ChatDto } from './dto/chat.dto';
 import { UsersRepository } from 'src/users/repositories/users.repository';
 import { FindAllConversationsResponseDto } from './dto/conversation/find-all-conversations-response.dto';
+import { BlocksRepository } from 'src/users/repositories/blocks.repository';
+import { UserService } from 'src/users/user.service';
 
 @Injectable()
 export class ChatService {
   constructor(
     private readonly chatRepository: ChatRepository,
     @Inject(forwardRef(() => UsersRepository))
-    private readonly userRepository: UsersRepository
+    private readonly userRepository: UsersRepository,
+    private readonly blocksRepository: BlocksRepository,
+    private readonly userService: UserService
   ) { }
 
+  async canChatWith(userId: string, otherUserId: string): Promise<boolean> {
+    const blockedIds = new Set(await this.blocksRepository.getAllBlockedUserIds(userId));
+    const matchedIds = new Set((await this.userService.findAllMatches(userId)).users.map(u => u.id));
+    return !blockedIds.has(otherUserId) && matchedIds.has(otherUserId);
+  }
+
   async findAllConversations(userId: string): Promise<FindAllConversationsResponseDto> {
-    const chats: ChatDto[] = await this.chatRepository.findAllChats(userId);
-    const userIds = chats.map(chat => chat.user1Id === userId ? chat.user2Id : chat.user1Id);
-    const users = await this.userRepository.findAllPreviewByIds(userIds);
-    const conversations: FindAllConversationsResponseDto = {
-      conversations: chats.map(chat => ({
+    const chats = await this.chatRepository.findAllChats(userId); // All chats the user has
+    const blockedIds = new Set(await this.blocksRepository.getAllBlockedUserIds(userId)); // User ids the user is blocked with
+    const matchedIds = new Set((await this.userService.findAllMatches(userId)).users.map(u => u.id)); // User ids the user is matched with
+
+    const filteredChats = chats.filter(chat => { // Filter out chats with blocked or matched users
+      const otherId = chat.user1Id === userId ? chat.user2Id : chat.user1Id;
+      return !blockedIds.has(otherId) && matchedIds.has(otherId);
+    });
+
+    const userIds = filteredChats.map(chat => chat.user1Id === userId ? chat.user2Id : chat.user1Id); // User ids of all users the user can chat with
+    const users = await this.userRepository.findAllPreviewByIds(userIds); // Getting all necessary previews
+
+    return {
+      conversations: filteredChats.map(chat => ({
         chatId: chat.id,
-        profilePreview: users.find(user => user.id === (chat.user1Id === userId ? chat.user2Id : chat.user1Id))!,
+        profilePreview: users.find(u => u.id === (chat.user1Id === userId ? chat.user2Id : chat.user1Id)),
         createdAt: chat.createdAt,
       })),
     };
-    return conversations;
   }
 }
