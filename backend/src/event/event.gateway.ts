@@ -79,4 +79,14 @@ export class EventGateway implements OnModuleInit {
     }
     await this.eventService.handleReadMessagesEvent(client.data.user.sub, data.messageIds);
   }
+
+  @SubscribeMessage('ping')
+  async handlePing(
+    @ConnectedSocket() client: Socket
+  ) {
+    if (!client.data.user.sub) {
+      throw new WsException('Invalid user');
+    }
+    await this.eventService.handlePingEvent(client.data.user.sub);
+  }
 }

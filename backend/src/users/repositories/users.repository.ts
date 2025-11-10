@@ -718,4 +718,16 @@ export class UsersRepository {
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async updateLastTimeActive(userId: string): Promise<void> {
+    try {
+      await this.db.query(
+        `UPDATE users SET last_time_active = CURRENT_TIMESTAMP WHERE id = $1`,
+        [userId]
+      );
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
