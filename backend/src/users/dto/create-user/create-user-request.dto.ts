@@ -1,10 +1,13 @@
 import { IsString, MinLength, MaxLength, IsEmail, Matches, IsNotEmpty } from 'class-validator';
 import { IsStrongPassword } from '../../../common/validators';
+import { Transform } from 'class-transformer';
 
 export class CreateUserRequestDto {
-  @IsString({ message: 'Email must be a string' })
   @IsNotEmpty({ message: 'Email is required' })
   @IsEmail({}, { message: 'Email must be a valid email address' })
+  @MinLength(5, { message: 'Email must be at least 5 characters long' })
+  @MaxLength(100, { message: 'Email must be less than 100 characters long' })
+  @Transform(({ value }) => value?.toLowerCase().trim())
   email: string;
 
   @IsStrongPassword()

@@ -1,4 +1,5 @@
-import { IsEnum, IsString, MinLength, MaxLength, IsOptional, Matches } from "class-validator";
+import { IsEnum, IsString, MinLength, MaxLength, IsOptional, Matches, IsEmail } from "class-validator";
+import { Transform } from 'class-transformer';
 import { Gender } from 'src/users/enums/user.enums';
 import { SexualOrientation } from 'src/users/enums/user.enums';
 
@@ -30,4 +31,11 @@ export class UpdateProfileRequestDto {
   @MinLength(5, { message: 'Biography must be at least 5 characters long' })
   @MaxLength(500, { message: 'Biography must be less than 500 characters long' })
   biography?: string;
+
+  @IsOptional()
+  @IsEmail({}, { message: 'Email must be a valid email address' })
+  @MinLength(5, { message: 'Email must be at least 5 characters long' })
+  @MaxLength(100, { message: 'Email must be less than 100 characters long' })
+  @Transform(({ value }) => value?.toLowerCase().trim())
+  email?: string;
 }

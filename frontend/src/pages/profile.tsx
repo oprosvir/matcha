@@ -87,17 +87,9 @@ export function Profile() {
                 <span className="font-medium">{user.username}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Email:</span>
-                <span className="font-medium">{user.email}</span>
-              </div>
-              <div className="flex justify-between">
                 <span className="text-muted-foreground">Email Status:</span>
-                <span
-                  className={`font-medium ${
-                    user.isEmailVerified ? "text-green-600" : "text-destructive"
-                  }`}
-                >
-                  {user.isEmailVerified ? "✓ Verified" : "Not Verified"}
+                <span className="font-medium text-green-600">
+                  ✓ Verified
                 </span>
               </div>
             </div>

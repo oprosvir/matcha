@@ -779,15 +779,37 @@ export class UserService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileRequestDto): Promise<UpdateProfileResponseDto> {
+    let emailChanged = false;
+
+    if (dto.email) {
+      const currentUser = await this.usersRepository.findById(userId);
+      if (!currentUser) {
+        throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND);
+      }
+
+      if (dto.email !== currentUser.email) {
+        const existingUser = await this.usersRepository.findByEmail(dto.email);
+        if (existingUser && existingUser.id !== userId) {
+          throw new CustomHttpException('EMAIL_ALREADY_EXISTS', 'Email is already in use by another account', 'ERROR_EMAIL_ALREADY_EXISTS', HttpStatus.CONFLICT);
+        }
+        emailChanged = true;
+      }
+    }
+
     const user: User = await this.usersRepository.updateProfile(userId, {
       firstName: dto.firstName,
       lastName: dto.lastName,
       gender: dto.gender,
       sexualOrientation: dto.sexualOrientation,
       biography: dto.biography,
+      email: dto.email,
+      isEmailVerified: emailChanged ? false : undefined,
     });
 
-    return { user: this.mapUserToPrivateUserDto(user) };
+    return {
+      user: this.mapUserToPrivateUserDto(user),
+      emailChanged,
+    };
   }
 
   async findAllMatches(userId: string): Promise<FindAllMatchesResponseDto> {

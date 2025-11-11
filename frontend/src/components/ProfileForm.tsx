@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import validator from "validator";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useUpdateProfile } from "@/hooks/useUserProfile";
@@ -24,6 +25,11 @@ const profileSchema = z.object({
       message:
         "Last name can contain letters, spaces, hyphens, and apostrophes",
     }),
+  email: z
+    .string()
+    .min(5, { message: "Email must be at least 5 characters long" })
+    .max(100, { message: "Email must be less than 100 characters long" })
+    .refine((val) => validator.isEmail(val), { message: "Invalid email address" }),
   gender: z.enum(["male", "female"], { message: "Please select a gender" }),
   sexualOrientation: z.enum(["straight", "gay", "bisexual"], {
     message: "Please select your sexual orientation",
@@ -48,6 +54,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
     defaultValues: {
       firstName: user.firstName,
       lastName: user.lastName,
+      email: user.email,
       gender: user.gender ?? undefined,
       sexualOrientation: user.sexualOrientation ?? undefined,
       biography: user.biography ?? "",
@@ -60,6 +67,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
     updateProfile({
       firstName: data.firstName,
       lastName: data.lastName,
+      email: data.email,
       gender: data.gender,
       sexualOrientation: data.sexualOrientation,
       biography: data.biography || "",
@@ -98,6 +106,29 @@ export function ProfileForm({ user }: ProfileFormProps) {
             </p>
           )}
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="email" className="text-sm font-medium mb-2 block">Email</label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="your.email@example.com"
+          {...form.register("email")}
+        />
+        {form.formState.errors.email && (
+          <p className="text-sm text-destructive mt-1">
+            {form.formState.errors.email.message}
+          </p>
+        )}
+        {form.watch("email") !== user.email && (
+          <p className="text-sm text-amber-600 dark:text-amber-500 mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+              <path fillRule="evenodd" d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 4a.75.75 0 0 1 .75.75v3a.75.75 0 1 1-1.5 0v-3A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+            </svg>
+            Changing your email will require re-verification
+          </p>
+        )}
       </div>
 
       <div>

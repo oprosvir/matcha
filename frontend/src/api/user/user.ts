@@ -12,6 +12,7 @@ interface UpdateProfileRequest {
   gender?: Gender;
   sexualOrientation?: SexualOrientation;
   biography?: string;
+  email?: string;
 }
 
 interface UpdateLocationRequest {
@@ -31,7 +32,7 @@ interface CompleteProfileRequest {
 
 const FindAllMatchesResponseSchema = z.object({ users: MatchesSchema });
 const GetOwnProfileResponseSchema = z.object({ user: UserSchema });
-const UpdateProfileResponseSchema = z.object({ user: UserSchema });
+const UpdateProfileResponseSchema = z.object({ user: UserSchema, emailChanged: z.boolean().optional() });
 const UpdateLocationResponseSchema = z.object({ user: UserSchema });
 const CompleteProfileResponseSchema = z.object({ user: UserSchema });
 const ResolveLocationByCoordsResponseSchema = z.object({
@@ -103,12 +104,12 @@ export const userApi = {
     return { data: response.data.user, messageKey: response.messageKey };
   },
 
-  updateProfile: async (request: UpdateProfileRequest): Promise<{ data: User; messageKey: string }> => {
+  updateProfile: async (request: UpdateProfileRequest): Promise<{ data: User; messageKey: string; emailChanged?: boolean }> => {
     const response = await parseApiResponse(apiClient.put('/users/me', request), createApiResponseSchema(UpdateProfileResponseSchema));
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
     }
-    return { data: response.data.user, messageKey: response.messageKey };
+    return { data: response.data.user, messageKey: response.messageKey, emailChanged: response.data.emailChanged };
   },
 
   updateLocation: async (request: UpdateLocationRequest): Promise<{ data: User; messageKey: string }> => {

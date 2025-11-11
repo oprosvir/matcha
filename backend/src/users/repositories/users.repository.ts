@@ -460,6 +460,8 @@ export class UsersRepository {
     gender: Gender;
     sexualOrientation: SexualOrientation;
     biography: string;
+    email: string;
+    isEmailVerified: boolean;
   }>): Promise<User> {
     const fields: string[] = [];
     const values: any[] = [];
@@ -472,6 +474,8 @@ export class UsersRepository {
       gender: 'gender',
       sexualOrientation: 'sexual_orientation',
       biography: 'biography',
+      email: 'email',
+      isEmailVerified: 'is_email_verified',
     };
 
     // Build update fields dynamically

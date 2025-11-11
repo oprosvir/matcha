@@ -36,8 +36,8 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: userApi.updateProfile,
-    onSuccess: ({ data, messageKey }: { data: User; messageKey: string }) => {
-      queryClient.setQueryData(['user'], data);
+    onSuccess: async ({ messageKey }: { messageKey: string; emailChanged?: boolean }) => {
+      await queryClient.invalidateQueries({ queryKey: ['user'] });
       toast.success(getToastMessage(messageKey));
     },
     onError: (error) => {
