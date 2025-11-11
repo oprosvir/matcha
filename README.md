@@ -15,7 +15,7 @@ This is a school project to create a dating website that facilitates connections
 
 #### 1. Registration and Sign-in
 - ✅ User registration with email, username, first/last name, and secure password
-- ✅ Password must NOT be commonly used English words (**TODO: Add common words validation**)
+- ✅ Password must NOT be commonly used English words (using `most-common-words-by-language` package)
 - ✅ Email verification link sent after registration
 - ✅ Login with username and password
 - ✅ Password reset via email
@@ -29,71 +29,81 @@ This is a school project to create a dating website that facilitates connections
   - ✅ Biography
   - ✅ Interest tags (#vegan, #geek, #piercing, etc.) - reusable across users
   - ❌ **Up to 5 photos** with one as profile picture
-- ❌ **Missing**: View who has viewed your profile (data exists in `profile_views` table)
+- ✅ **Ability to modify first name, last name, and email**
+- ✅ GPS positioning with fallback geolocation
+  - ✅ GPS geolocation via browser API
+  - ✅ IP-based fallback via ip-api.com
+  - ✅ Manual location adjustment in profile
+  - ⚠️ City-level accuracy only (not neighborhood-level)
+- ❌ **Missing**: View who has viewed your profile (data exists in `profile_views` table, hook ready)
 - ❌ **Missing**: View who has liked you (data exists in `likes` table)
-- ❌ **Missing**: Public "fame rating" calculation and display
-- ❌ **Missing**: GPS positioning down to neighborhood level
-  - Must implement fallback geolocation if user opts out
-  - Allow manual GPS location adjustment in profile
-- ✅ Ability to modify profile information, name, and email
+- ❌ **Missing**: Public "fame rating" calculation and display (field exists, always 0)
 
 #### 3. Browsing (Suggested Matches)
-- ❌ **NOT IMPLEMENTED**
-- Must show list of suggested profiles matching user's sexual preferences
-- Handle heterosexual, homosexual, and bisexual matching (default to bisexual if not specified)
-- Intelligent matching based on:
-  - Geographical proximity
-  - Number of shared interest tags
-  - Fame rating
-- Priority given to users in same geographical area
-- Must be sortable by: age, location, fame rating, common tags
-- Must be filterable by: age, location, fame rating, common tags
+- ✅ **FULLY IMPLEMENTED** at `/browse` page with two tabs
+- ✅ Shows suggested profiles matching user's sexual preferences
+- ✅ Handles heterosexual, homosexual, and bisexual matching (defaults to bisexual if not specified)
+- ✅ Complex mutual sexual orientation compatibility logic
+- ✅ AI-powered intelligent matching algorithm:
+  - ✅ Geographical proximity using Haversine formula (60% weight)
+  - ✅ Number of shared interest tags (25% weight)
+  - ✅ Fame rating (15% weight)
+- ✅ Sortable by: age, fame rating, shared interests count
+- ✅ Filterable by: age range, fame rating range, location, interest tags, first name
+- ✅ Infinite scroll pagination with cursor-based loading
+- ✅ Like/unlike buttons with optimistic UI updates
+- ✅ Automatically excludes blocked users
 
 #### 4. Research (Advanced Search)
-- ❌ **NOT IMPLEMENTED**
-- Search by one or multiple criteria:
-  - Age range
-  - Fame rating range
-  - Location
-  - One or multiple interest tags
-- Results must be sortable and filterable (same as browsing)
+- ✅ **FULLY IMPLEMENTED** (integrated in `/browse` page)
+- ✅ Search by multiple criteria simultaneously:
+  - ✅ Age range (min/max sliders)
+  - ✅ Fame rating range (min/max sliders)
+  - ✅ Location (dropdown with unique locations)
+  - ✅ Multiple interest tags (multi-select)
+  - ✅ First name (text search)
+- ✅ Results sortable and filterable (same as browsing)
+- ✅ Works in both "Browse All" and "Suggested" tabs
 
 #### 5. Profile View (Other Users)
-- ❌ **NOT IMPLEMENTED**
-- View other users' profiles (all info except email/password)
-- ❌ Record profile view in visit history (table exists: `profile_views`)
-- Required actions on profile:
-  - ❌ **Like** user's profile picture (mutual likes = "connected" = can chat)
-    - Cannot like without having own profile picture
-  - ❌ **Unlike** user (prevents notifications, disables chat)
-  - ❌ Check user's fame rating
-  - ❌ See if user is currently online (need to track online status)
-  - ❌ See last connection time if offline (need `last_time_active` tracking)
-  - ❌ **Report** user as fake account (table exists: `reports`)
-  - ❌ **Block** user (table exists: `blocks`)
-    - Blocked users don't appear in search/suggestions
-    - No notifications from blocked users
-    - Chat disabled with blocked users
-- Must show if viewed profile has liked you or if you're already connected
-- Option to unlike/disconnect from profile
+- ❌ **NOT IMPLEMENTED** (no dedicated profile page)
+- ❌ Cannot view other users' full profiles
+- ✅ Profile view tracking backend complete (POST/GET `/profile-views`)
+- ✅ **Like/Unlike** functionality implemented:
+  - ✅ Like buttons in browse tables (POST `/users/like`)
+  - ✅ Unlike buttons in browse tables (POST `/users/unlike`)
+  - ✅ Cannot like without own profile picture (backend validation)
+  - ✅ Mutual likes create chat automatically
+  - ✅ Real-time notifications for like/unlike/match
+- ❌ No dedicated profile view UI
+- ❌ Cannot see if user is online or last connection time
+- ❌ **Report** functionality not implemented (table exists: `reports`)
+- ❌ **Block** functionality not implemented (table exists: `blocks`, repository ready, no controller)
 
 #### 6. Chat
-- ❌ **NOT IMPLEMENTED**
-- Real-time chat between connected users (mutually liked)
-- **Maximum 10 second delay** for message delivery
-- Must see notification of new messages from any page
-- Database schema exists (`chats`, `messages` tables)
+- ✅ **FULLY IMPLEMENTED** at `/chat` page
+- ✅ Real-time chat between connected users (mutually liked)
+- ✅ **Instant delivery** via Socket.IO (**meets <10 second requirement**)
+- ✅ Two-column layout: conversations list + active chat
+- ✅ Unread message count with badges
+- ✅ Read receipts via Intersection Observer
+- ✅ Auto-scroll to latest message
+- ✅ Optimistic UI updates
+- ✅ Mobile-responsive design
+- ✅ WebSocket with JWT authentication
 
 #### 7. Notifications
-- ❌ **NOT IMPLEMENTED**
-- Real-time notifications (**maximum 10 second delay**) for:
-  - Receiving a like
-  - Profile being viewed
-  - Receiving a message
-  - Mutual like (match)
-  - Being unliked by connected user
-- Must see unread notifications indicator from any page
-- Database schema exists (`notifications` table)
+- ✅ **FULLY IMPLEMENTED**
+- ✅ Real-time notifications via Socket.IO (**instant delivery, meets <10 second requirement**):
+  - ✅ Receiving a like
+  - ✅ Profile being viewed
+  - ✅ Receiving a message
+  - ✅ Mutual like (match) with confetti animation
+  - ✅ Being unliked by connected user
+- ✅ Unread notification indicator in navbar bell icon (visible from any page)
+- ✅ Toast notifications for all events
+- ✅ Mark as read functionality
+- ✅ WebSocket with room-based broadcasting
 
 ### Technical Requirements
 
