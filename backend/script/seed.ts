@@ -386,24 +386,42 @@ async function seedDatabase() {
     console.log('🔍 Adding user photos...');
     for (let i = 0; i < NUM_USERS; i++) {
       const user = users[i];
-      // Generate a stable, unique avatar URL for each user using RoboHash
-      // This provides consistent avatars without needing to store files
-      const avatarUrl = `https://robohash.org/${user.id}?set=set5&size=512x512`;
-
       await client.query(
         'INSERT INTO user_photos (user_id, url, is_profile_pic) VALUES ($1, $2, TRUE)',
-        [user.id, avatarUrl]
+        [user.id, user.portraitUrl]
       );
     }
     console.log('✅ Added user photos');
 
     // Add main user photo
     console.log('📸 Adding main user photo...');
-    const mainUserAvatarUrl = `https://robohash.org/${mainUserId}?set=set5&size=512x512`;
     await client.query(
       'INSERT INTO user_photos (user_id, url, is_profile_pic) VALUES ($1, $2, TRUE)',
-      [mainUserId, mainUserAvatarUrl]
+      [mainUserId, faker.image.personPortrait({ sex: 'male', size: 512 })]
     );
+
+    // Alternative approach with RoboHash (commented out)
+    //  console.log('🔍 Adding user photos...');
+    // for (let i = 0; i < NUM_USERS; i++) {
+    //   const user = users[i];
+    //   // Generate a stable, unique avatar URL for each user using RoboHash
+    //   // This provides consistent avatars without needing to store files
+    //   const avatarUrl = `https://robohash.org/${user.id}?set=set5&size=512x512`;
+
+    //   await client.query(
+    //     'INSERT INTO user_photos (user_id, url, is_profile_pic) VALUES ($1, $2, TRUE)',
+    //     [user.id, avatarUrl]
+    //   );
+    // }
+    // console.log('✅ Added user photos');
+
+    // // Add main user photo
+    // console.log('📸 Adding main user photo...');
+    // const mainUserAvatarUrl = `https://robohash.org/${mainUserId}?set=set5&size=512x512`;
+    // await client.query(
+    //   'INSERT INTO user_photos (user_id, url, is_profile_pic) VALUES ($1, $2, TRUE)',
+    //   [mainUserId, mainUserAvatarUrl]
+    // );
 
     // Add main user interests
     console.log('🎯 Adding main user interests...');
