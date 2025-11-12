@@ -95,7 +95,11 @@ const ConfettiComponent = forwardRef<ConfettiRef, Props>((props, ref) => {
 
   return (
     <ConfettiContext.Provider value={api}>
-      <canvas ref={canvasRef} {...rest} />
+      <canvas
+        ref={canvasRef}
+        {...rest}
+        className="fixed inset-0 w-full h-full pointer-events-none z-50"
+      />
       {children}
     </ConfettiContext.Provider>
   )
