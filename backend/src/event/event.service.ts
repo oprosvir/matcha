@@ -13,10 +13,6 @@ export class EventService {
   ) { }
 
   async handleSendMessageEvent(chatId: string, senderUserId: string, content: string): Promise<void> {
-    const canChat = await this.chatService.canChatWith(senderUserId, chatId);
-    if (!canChat) {
-      throw new CustomHttpException('FORBIDDEN', 'You are not allowed to chat with this user', 'ERROR_FORBIDDEN', HttpStatus.FORBIDDEN);
-    }
     await this.messagesService.createMessage({ chatId, senderId: senderUserId, content });
   }
 

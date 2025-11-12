@@ -149,7 +149,7 @@ export function useWebSocket(enabled: boolean = true): UseWebSocketReturn {
 
   const sendMessage = useCallback((chatId: string, content: string, userId: string) => {
     if (socket?.connected) {
-      socket.emit('sendMessage', { chatId, content, userId });
+      socket.emit('sendMessage', { chatId, content });
       const tempMessage: Message = {
         id: `temp-${uuidv4()}`, // Will be replaced by server response when we get it
         chatId: chatId,
