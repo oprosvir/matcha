@@ -22,3 +22,6 @@ export * from './get-current-user/get-current-user-response.dto';
 
 // Get location list
 export * from './get-location-list/get-location-list.dto';
+
+// Upload photo
+export * from './upload-photo';

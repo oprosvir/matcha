@@ -4,3 +4,10 @@
 package-lock.json
 package.json
 CLAUDE.md
+
+# Uploaded user photos (but keep .gitkeep)
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/users/
+backend/uploads/users/*
+!backend/uploads/users/.gitkeep

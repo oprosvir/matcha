@@ -7,6 +7,7 @@ import { DatabaseService } from 'src/database/database.service';
 import { LikesRepository } from './repositories/likes.repository';
 import { LikeSent, LikeReceived } from './repositories/likes.repository';
 import { BlocksRepository } from './repositories/blocks.repository';
+import { PhotosRepository } from './repositories/photos.repository';
 import { ChatRepository } from 'src/chat/repositories/chat.repository';
 import { NotificationService } from 'src/notifications/notification.service';
 import { NotificationType } from 'src/common/enums/notification-type';
@@ -98,6 +99,7 @@ export class UserService {
     private readonly db: DatabaseService,
     private readonly likesRepository: LikesRepository,
     private readonly blocksRepository: BlocksRepository,
+    private readonly photosRepository: PhotosRepository,
     private readonly chatRepository: ChatRepository,
     private readonly notificationService: NotificationService,
     private readonly redisRepository: RedisRepository,
@@ -726,6 +728,17 @@ export class UserService {
     const existingUser = await this.usersRepository.findById(userId);
     if (!existingUser) { throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND); }
     if (existingUser.profile_completed) { throw new CustomHttpException('PROFILE_ALREADY_COMPLETED', 'Profile already completed', 'ERROR_PROFILE_ALREADY_COMPLETED', HttpStatus.BAD_REQUEST); }
+
+    // Validate that user has at least one photo uploaded
+    const photoCount = await this.photosRepository.getUserPhotoCount(userId);
+    if (photoCount === 0) {
+      throw new CustomHttpException(
+        'NO_PHOTOS_UPLOADED',
+        'You must upload at least one photo before completing your profile',
+        'ERROR_NO_PHOTOS',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     const location = await this.resolveLocation({
       type: 'latitudeAndLongitude',

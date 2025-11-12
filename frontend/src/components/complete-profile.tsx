@@ -38,6 +38,7 @@ import z from "zod";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompleteProfile } from "@/hooks/useUserProfile";
+import { useUploadPhotos } from "@/hooks/usePhotos";
 import { calculateAge, getMaxDate, formatDateForInput } from "@/utils/dateUtils";
 import { LocationSelector } from "./LocationSelector";
 
@@ -70,8 +71,7 @@ const formSchema = z.object({
     .min(5, "Biography must be at least 5 characters")
     .max(500, "Biography must be less than 500 characters"),
   interests: z.array(z.string()).min(1, "At least one interest is required"),
-  // TODO: Make photos required when backend endpoint is ready
-  photos: z.array(fileSchema).optional(),
+  photos: z.array(fileSchema).min(1, "At least one photo is required").max(6, "Maximum 6 photos allowed"),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   cityName: z.string().min(1, "Please share your location to see matches nearby"),
@@ -260,20 +260,35 @@ export function CompleteProfileForm({ user }: { user: User }) {
     );
   };
 
-  const onSubmit = (data: FormData) => {
+  const uploadPhotos = useUploadPhotos();
+
+  const onSubmit = async (data: FormData) => {
     if (data.latitude === undefined || data.longitude === undefined) {
       return;
     }
-    // TODO: Add photo upload endpoint on backend
-    completeProfile({
-      dateOfBirth: data.dateOfBirth,
-      gender: data.gender,
-      sexualOrientation: data.sexualOrientation,
-      biography: data.biography,
-      interestIds: data.interests,
-      latitude: data.latitude,
-      longitude: data.longitude,
-    });
+
+    if (!data.photos || data.photos.length === 0) {
+      return;
+    }
+
+    try {
+      // First, upload photos
+      await uploadPhotos.mutateAsync(data.photos);
+
+      // Then, complete profile (photos are already uploaded)
+      completeProfile({
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender,
+        sexualOrientation: data.sexualOrientation,
+        biography: data.biography,
+        interestIds: data.interests,
+        latitude: data.latitude,
+        longitude: data.longitude,
+      });
+    } catch (error) {
+      // Error is handled by uploadPhotos hook (shows toast)
+      console.error("Failed to upload photos:", error);
+    }
   };
 
   return (
