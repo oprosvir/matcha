@@ -25,10 +25,12 @@ export class AuthService {
     }
     this.sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
     this.SENDGRID_SENDER_EMAIL = process.env.SENDGRID_SENDER_EMAIL;
+    this.FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
   }
   private readonly ACCESS_TOKEN_SECRET: string;
   private readonly REFRESH_TOKEN_SECRET: string;
   private readonly SENDGRID_SENDER_EMAIL: string;
+  private readonly FRONTEND_URL: string;
   private readonly sendgrid = sgMail;
 
   private generateAccessToken(user: { id: string, email: string }): string {
@@ -98,7 +100,7 @@ export class AuthService {
         to: user.email,
         from: this.SENDGRID_SENDER_EMAIL,
         subject: 'Reset your password for Matcha',
-        html: `<p>Click <a href="http://localhost:5173/auth/reset-password?token=${resetToken}">here</a> to reset your password.</p>`
+        html: `<p>Click <a href="${this.FRONTEND_URL}/auth/reset-password?token=${resetToken}">here</a> to reset your password.</p>`
       });
     } catch (error) {
       console.error(error);
@@ -140,7 +142,7 @@ export class AuthService {
         to: user.email,
         from: this.SENDGRID_SENDER_EMAIL,
         subject: 'Verify your email for Matcha',
-        html: `<p>Click <a href="http://localhost:5173/auth/verify-email?token=${verifyEmailToken}">here</a> to verify your email.</p>`
+        html: `<p>Click <a href="${this.FRONTEND_URL}/auth/verify-email?token=${verifyEmailToken}">here</a> to verify your email.</p>`
       });
     } catch (error) {
       console.error(error);
