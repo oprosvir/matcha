@@ -1,14 +1,15 @@
 import { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { Camera, XIcon, Star } from 'lucide-react';
-import { useUserPhotos, useUploadPhotos, useDeletePhoto, useSetProfilePicture, type Photo } from '@/hooks/usePhotos';
+import { useUserPhotos, useUploadPhoto, useDeletePhoto, useSetProfilePicture, type Photo } from '@/hooks/usePhotos';
 import { Skeleton } from './ui/skeleton';
 import { getPhotoUrl } from '@/utils/photoUtils';
 import { toast } from 'sonner';
+import { ImageCropModal, type CropData } from './ImageCropModal';
 
 interface PhotoSlotProps {
   photo?: Photo;
-  onUpload: (file: File) => void;
+  onUpload: (file: File, cropData?: CropData) => void;
   onDelete: () => void;
   onSetProfilePic: () => void;
   isUploading: boolean;
@@ -16,6 +17,8 @@ interface PhotoSlotProps {
 
 function PhotoSlot({ photo, onUpload, onDelete, onSetProfilePic, isUploading }: PhotoSlotProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -57,8 +60,9 @@ function PhotoSlot({ photo, onUpload, onDelete, onSetProfilePic, isUploading }: 
           return;
         }
 
-        // All validations passed, proceed with upload
-        onUpload(file);
+        // All validations passed, show crop modal
+        setSelectedFile(file);
+        setShowCropModal(true);
       };
 
       img.onerror = () => {
@@ -72,19 +76,52 @@ function PhotoSlot({ photo, onUpload, onDelete, onSetProfilePic, isUploading }: 
     }
   };
 
+  const handleCropConfirm = (file: File, cropData: CropData) => {
+    setShowCropModal(false);
+    setSelectedFile(null);
+    onUpload(file, cropData);
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setSelectedFile(null);
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
-    <div className="relative w-full aspect-square">
-      <div className="w-full h-full border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors relative overflow-hidden cursor-pointer">
-        <input
+    <>
+      {selectedFile && (
+        <ImageCropModal
+          file={selectedFile}
+          isOpen={showCropModal}
+          onClose={handleCropCancel}
+          onConfirm={handleCropConfirm}
+        />
+      )}
+
+      <div className={`relative w-full aspect-square ${photo || isUploading ? 'pointer-events-none' : ''}`}>
+        <div className={`w-full h-full border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center transition-colors relative overflow-hidden ${
+          !photo && !isUploading ? 'hover:border-gray-400 cursor-pointer' : ''
+        }`}>
+          <input
           ref={fileInputRef}
           type="file"
           accept="image/jpeg,image/png"
           onChange={handleFileChange}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
           disabled={!!photo || isUploading}
-        />
+          />
 
-        {photo ? (
+          {photo ? (
           <>
             <img
               src={getPhotoUrl(photo.url)}
@@ -101,10 +138,11 @@ function PhotoSlot({ photo, onUpload, onDelete, onSetProfilePic, isUploading }: 
               }}
               variant={photo.isProfilePic ? "default" : "secondary"}
               size="icon"
-              className="absolute top-1 left-1 z-20 rounded-full w-8 h-8"
+              className="absolute top-0.5 left-0.5 md:top-1 md:left-1 z-0 rounded-full w-6 h-6 md:w-8 md:h-8 pointer-events-auto"
             >
               <Star
-                size={16}
+                size={12}
+                className="md:w-4 md:h-4"
                 fill={photo.isProfilePic ? "currentColor" : "none"}
               />
             </Button>
@@ -118,32 +156,38 @@ function PhotoSlot({ photo, onUpload, onDelete, onSetProfilePic, isUploading }: 
               }}
               variant="destructive"
               size="icon"
-              className="absolute top-1 right-1 z-20 rounded-full w-8 h-8"
+              className="absolute top-0.5 right-0.5 md:top-1 md:right-1 z-0 rounded-full w-6 h-6 md:w-8 md:h-8 pointer-events-auto"
             >
-              <XIcon size={16} />
+              <XIcon size={12} className="md:w-4 md:h-4" />
             </Button>
           </>
         ) : isUploading ? (
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-        ) : (
-          <Camera className="w-6 h-6 text-gray-400" />
-        )}
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-1 md:gap-2 p-2 md:p-4 text-center pointer-events-none">
+              <Camera className="w-6 h-6 md:w-8 md:h-8 text-gray-400" />
+              <p className="text-[10px] md:text-xs text-muted-foreground leading-tight">
+                Drag & drop<br className="md:hidden" /> or click
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 export function PhotoManager() {
   const { data: photos = [], isLoading } = useUserPhotos();
-  const uploadPhotos = useUploadPhotos();
+  const uploadPhoto = useUploadPhoto();
   const deletePhoto = useDeletePhoto();
   const setProfilePicture = useSetProfilePicture();
 
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
 
-  const handleUpload = async (file: File) => {
+  const handleUpload = async (file: File, cropData?: CropData) => {
     if (photos.length >= 6) {
       toast.error('Maximum 6 photos allowed');
       return;
@@ -151,13 +195,19 @@ export function PhotoManager() {
 
     try {
       setUploadingIndex(photos.length);
-      await uploadPhotos.mutateAsync([file]);
+      await uploadPhoto.mutateAsync({ file, cropData });
     } finally {
       setUploadingIndex(null);
     }
   };
 
   const handleDelete = async (photoId: string) => {
+    // Prevent deleting the last photo
+    if (photos.length === 1) {
+      toast.error('You must have at least one photo. Please upload a new photo before deleting this one.');
+      return;
+    }
+
     if (window.confirm('Are you sure you want to delete this photo?')) {
       await deletePhoto.mutateAsync(photoId);
     }
@@ -199,11 +249,6 @@ export function PhotoManager() {
           />
         ))}
       </div>
-      {photos.length > 0 && (
-        <p className="text-xs text-muted-foreground mt-2">
-          Click the star to set a photo as your profile picture
-        </p>
-      )}
     </div>
   );
 }

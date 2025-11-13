@@ -6,7 +6,7 @@ export class PhotoDto {
 }
 
 export class UploadPhotoResponseDto {
-  photos: PhotoDto[];
+  photo: PhotoDto;
 }
 
 export class SetProfilePictureResponseDto {

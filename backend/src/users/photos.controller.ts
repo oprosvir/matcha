@@ -8,10 +8,11 @@ import {
   Param,
   UseGuards,
   UseInterceptors,
-  UploadedFiles,
+  UploadedFile,
   ParseUUIDPipe,
+  Body,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { CurrentUser } from 'src/auth/current-user.decorators';
 import { PhotosService } from './photos.service';
@@ -19,6 +20,7 @@ import {
   UploadPhotoResponseDto,
   SetProfilePictureResponseDto,
   GetPhotosResponseDto,
+  CropDataDto,
 } from './dto';
 
 @Controller('users/me/photos')
@@ -27,16 +29,16 @@ export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 
   /**
-   * Upload photos (max 6 per user)
+   * Upload a single photo (max 6 per user total)
    * POST /users/me/photos
    */
   @Post()
   @UseInterceptors(
-    FilesInterceptor('photos', 6, {
+    FileInterceptor('photo', {
       limits: {
         fileSize: 5 * 1024 * 1024, // 5MB
       },
-      fileFilter: (req, file, callback) => {
+      fileFilter: (_req, file, callback) => {
         // Only allow JPEG and PNG
         if (!file.mimetype.match(/^image\/(jpeg|png)$/)) {
           return callback(new Error('Only JPEG and PNG images are allowed'), false);
@@ -45,15 +47,27 @@ export class PhotosController {
       },
     }),
   )
-  async uploadPhotos(
+  async uploadPhoto(
     @CurrentUser('sub') userId: string,
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFile() file: Express.Multer.File,
+    @Body('cropData') cropDataJson?: string,
   ): Promise<{ success: boolean; data: UploadPhotoResponseDto; messageKey: string }> {
-    const photos = await this.photosService.uploadPhotos(userId, files);
+    // Parse cropData if provided (sent as JSON string in FormData)
+    let cropData: CropDataDto | undefined;
+    if (cropDataJson) {
+      try {
+        cropData = JSON.parse(cropDataJson);
+      } catch (error) {
+        // Invalid JSON, ignore cropData
+        cropData = undefined;
+      }
+    }
+
+    const photo = await this.photosService.uploadPhoto(userId, file, cropData);
 
     return {
       success: true,
-      data: { photos },
+      data: { photo },
       messageKey: 'SUCCESS_PHOTOS_UPLOADED',
     };
   }

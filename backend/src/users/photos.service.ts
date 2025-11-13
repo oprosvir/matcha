@@ -1,6 +1,6 @@
 /// <reference types="multer" />
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { PhotosRepository, Photo } from './repositories/photos.repository';
+import { PhotosRepository } from './repositories/photos.repository';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -19,22 +19,30 @@ export interface PhotoUploadResult {
   createdAt: string;
 }
 
+export interface CropData {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 @Injectable()
 export class PhotosService {
   constructor(private readonly photosRepository: PhotosRepository) {}
 
   /**
-   * Upload photos for a user
+   * Upload a single photo for a user
    * @param userId - User ID
-   * @param files - Array of uploaded files from multer
-   * @returns Array of created photo records
+   * @param file - Uploaded file from multer
+   * @param cropData - Optional crop coordinates to apply before resizing
+   * @returns Created photo record
    */
-  async uploadPhotos(userId: string, files: Express.Multer.File[]): Promise<PhotoUploadResult[]> {
-    // Validation: Check if files array is empty
-    if (!files || files.length === 0) {
+  async uploadPhoto(userId: string, file: Express.Multer.File, cropData?: CropData): Promise<PhotoUploadResult> {
+    // Validation: Check if file exists
+    if (!file) {
       throw new CustomHttpException(
         'NO_FILES_PROVIDED',
-        'No files provided for upload',
+        'No file provided for upload',
         'ERROR_NO_FILES',
         HttpStatus.BAD_REQUEST,
       );
@@ -42,55 +50,44 @@ export class PhotosService {
 
     // Validation: Check max photos per user
     const currentPhotoCount = await this.photosRepository.getUserPhotoCount(userId);
-    const totalAfterUpload = currentPhotoCount + files.length;
 
-    if (totalAfterUpload > MAX_PHOTOS_PER_USER) {
+    if (currentPhotoCount >= MAX_PHOTOS_PER_USER) {
       throw new CustomHttpException(
         'MAX_PHOTOS_EXCEEDED',
-        `Maximum ${MAX_PHOTOS_PER_USER} photos allowed per user. You currently have ${currentPhotoCount} photos.`,
+        `Maximum ${MAX_PHOTOS_PER_USER} photos allowed per user.`,
         'ERROR_MAX_PHOTOS_EXCEEDED',
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    // Validate each file
-    for (const file of files) {
-      await this.validateFile(file);
-    }
+    // Validate file
+    await this.validateFile(file);
 
-    // Process and save files
-    const uploadedPhotos: PhotoUploadResult[] = [];
+    // Process and save file
     const userUploadDir = path.join(UPLOAD_DIR, userId);
 
     try {
-      // Ensure user upload directory exists
       await fs.mkdir(userUploadDir, { recursive: true });
 
-      // Determine if first photo should be profile picture
       const isFirstPhoto = currentPhotoCount === 0;
+      const isProfilePic = isFirstPhoto;
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const isProfilePic = isFirstPhoto && i === 0;
+      const photoResult = await this.processAndSaveFile(userId, file, userUploadDir, isProfilePic, cropData);
 
-        // Process and save file
-        const photoResult = await this.processAndSaveFile(userId, file, userUploadDir, isProfilePic);
-        uploadedPhotos.push(photoResult);
-      }
-
-      return uploadedPhotos;
+      return photoResult;
     } catch (error) {
-      // Cleanup: Delete any uploaded files if error occurs
-      await this.cleanupFiles(uploadedPhotos.map(p => p.url));
-
+      // Rethrow known custom exceptions
       if (error instanceof CustomHttpException) {
         throw error;
       }
 
-      console.error('Error uploading photos:', error);
+      // Log unknown errors
+      console.error('Error uploading photo:', error);
+
+      // Wrap unknown errors
       throw new CustomHttpException(
         'PHOTO_UPLOAD_FAILED',
-        'Failed to upload photos',
+        'Failed to upload photo',
         'ERROR_PHOTO_UPLOAD_FAILED',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
@@ -103,10 +100,21 @@ export class PhotosService {
    * @param userId - User ID (for authorization)
    */
   async deletePhoto(photoId: string, userId: string): Promise<void> {
-    // Delete from database (includes authorization check)
+    // Check current photo count before deletion
+    const currentPhotoCount = await this.photosRepository.getUserPhotoCount(userId);
+
+    // Prevent deleting the last photo
+    if (currentPhotoCount <= 1) {
+      throw new CustomHttpException(
+        'CANNOT_DELETE_LAST_PHOTO',
+        'You must have at least one photo. Please upload a new photo before deleting this one.',
+        'ERROR_CANNOT_DELETE_LAST_PHOTO',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const deletedPhoto = await this.photosRepository.deletePhoto(photoId, userId);
 
-    // Delete file from filesystem
     await this.deleteFileFromDisk(deletedPhoto.url);
 
     // If deleted photo was the profile picture, auto-promote another photo
@@ -247,15 +255,34 @@ export class PhotosService {
     file: Express.Multer.File,
     userUploadDir: string,
     isProfilePic: boolean,
+    cropData?: CropData,
   ): Promise<PhotoUploadResult> {
     // Generate unique filename
     const fileExtension = file.mimetype === 'image/png' ? 'png' : 'jpg';
     const filename = `${uuidv4()}.${fileExtension}`;
     const filePath = path.join(userUploadDir, filename);
 
-    // Process image with Sharp (optimize and convert to JPEG if needed)
-    await sharp(file.buffer)
-      .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+    // Process image with Sharp
+    // First, apply EXIF rotation to fix orientation issues
+    let sharpInstance = sharp(file.buffer).rotate();
+
+    // If cropData is provided, apply it (extract the crop area)
+    if (cropData) {
+      sharpInstance = sharpInstance.extract({
+        left: Math.round(cropData.x),
+        top: Math.round(cropData.y),
+        width: Math.round(cropData.width),
+        height: Math.round(cropData.height),
+      });
+    }
+
+    // Then resize to square (1024x1024) for consistent display across all views
+    await sharpInstance
+      .resize(1024, 1024, {
+        fit: 'cover',           // Crop to fill the square
+        position: 'center',     // Center the crop area
+        withoutEnlargement: true
+      })
       .jpeg({ quality: 85 })
       .toFile(filePath);
 
@@ -287,16 +314,7 @@ export class PhotosService {
   }
 
   /**
-   * Cleanup files (used in error handling)
-   */
-  private async cleanupFiles(urls: string[]): Promise<void> {
-    for (const url of urls) {
-      await this.deleteFileFromDisk(url);
-    }
-  }
-
-  /**
-   * Delete all photos for a user (used when deleting user account)
+   * Delete all photos for a user
    */
   async deleteAllUserPhotos(userId: string): Promise<void> {
     const photos = await this.photosRepository.deleteAllUserPhotos(userId);

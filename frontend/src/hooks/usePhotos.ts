@@ -20,24 +20,25 @@ export function useUserPhotos() {
 }
 
 /**
- * Hook for uploading photos
+ * Hook for uploading a single photo
  */
-export function useUploadPhotos() {
+export function useUploadPhoto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (files: File[]) => userApi.uploadPhotos(files),
+    mutationFn: ({ file, cropData }: { file: File, cropData?: { x: number; y: number; width: number; height: number } }) =>
+      userApi.uploadPhoto(file, cropData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user', 'photos'] });
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      toast.success("Photos uploaded successfully", {
-        id: 'photo-upload', // Prevent toast spam when uploading multiple photos
+      toast.success("Photo uploaded successfully", {
+        id: 'photo-upload',
       });
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || "Failed to upload photos";
+      const errorMessage = error?.response?.data?.message || "Failed to upload photo";
       toast.error(errorMessage, {
-        id: 'photo-upload', // Use same ID to replace success toast if error occurs
+        id: 'photo-upload',
       });
     },
   });

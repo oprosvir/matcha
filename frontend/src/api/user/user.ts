@@ -265,11 +265,17 @@ export const userApi = {
     return response.data.photos;
   },
 
-  uploadPhotos: async (files: File[]): Promise<{ id: string; url: string; isProfilePic: boolean }[]> => {
+  uploadPhoto: async (
+    file: File,
+    cropData?: { x: number; y: number; width: number; height: number }
+  ): Promise<{ id: string; url: string; isProfilePic: boolean }> => {
     const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('photos', file);
-    });
+    formData.append('photo', file);
+
+    // Add cropData as JSON string if provided
+    if (cropData) {
+      formData.append('cropData', JSON.stringify(cropData));
+    }
 
     const PhotoSchema = z.object({
       id: z.string(),
@@ -277,8 +283,8 @@ export const userApi = {
       isProfilePic: z.boolean(),
     });
 
-    const UploadPhotosResponseSchema = z.object({
-      photos: z.array(PhotoSchema),
+    const UploadPhotoResponseSchema = z.object({
+      photo: PhotoSchema,
     });
 
     const response = await parseApiResponse(
@@ -287,14 +293,14 @@ export const userApi = {
           'Content-Type': 'multipart/form-data',
         },
       }),
-      createApiResponseSchema(UploadPhotosResponseSchema)
+      createApiResponseSchema(UploadPhotoResponseSchema)
     );
 
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
     }
 
-    return response.data.photos;
+    return response.data.photo;
   },
 
   deletePhoto: async (photoId: string): Promise<void> => {

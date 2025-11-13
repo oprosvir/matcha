@@ -48,7 +48,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen w-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-10">
+      <header className="border-b bg-card sticky top-0 z-40">
         <div className="container max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo + Nav */}
