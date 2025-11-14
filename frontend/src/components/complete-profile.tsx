@@ -90,13 +90,6 @@ export function CompleteProfileForm({ user }: { user: User }) {
   const { data: photos = [] } = useUserPhotos();
   const [photoError, setPhotoError] = useState<string | null>(null);
 
-  // Clear photo error when photos are uploaded
-  useEffect(() => {
-    if (photos.length > 0) {
-      setPhotoError(null);
-    }
-  }, [photos.length]);
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     mode: "onSubmit",
@@ -119,8 +112,17 @@ export function CompleteProfileForm({ user }: { user: User }) {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitted },
   } = form;
+
+  // Show photo error immediately when form is submitted
+  useEffect(() => {
+    if (isSubmitted && photos.length === 0) {
+      setPhotoError("You must upload at least one photo before completing your profile");
+    } else if (photos.length > 0) {
+      setPhotoError(null);
+    }
+  }, [isSubmitted, photos.length]);
   const selectedInterests = watch("interests");
   const watchedLatitude = watch("latitude");
   const watchedLongitude = watch("longitude");
