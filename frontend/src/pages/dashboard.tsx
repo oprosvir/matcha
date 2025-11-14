@@ -14,7 +14,6 @@ import {
   MessageCircle,
   MapPin,
 } from "lucide-react";
-import { Confetti } from "@/components/ui/confetti";
 import { getPhotoUrl } from "@/utils/photoUtils";
 
 export function Dashboard() {
@@ -164,7 +163,6 @@ export function Dashboard() {
             </Card>
           </div>
         </div>
-        <Confetti />
       </AppLayout>
     );
   }

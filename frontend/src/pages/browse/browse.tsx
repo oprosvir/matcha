@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 
 export function Browse() {
-  const [activeTab, setActiveTab] = useState<string>("browse-all");
+  const [activeTab, setActiveTab] = useState<string>("suggested");
 
   return (
     <AppLayout>

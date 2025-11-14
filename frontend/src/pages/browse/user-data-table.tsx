@@ -29,7 +29,7 @@ export function UserDataTable<TData>({
   observerTarget,
 }: UserDataTableProps<TData>) {
   return (
-    <div className="rounded-md border flex-1 overflow-auto min-h-0">
+    <div className="bg-card rounded-md border flex-1 overflow-auto min-h-0">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
