@@ -4,6 +4,8 @@ import { z } from "zod";
 import validator from "validator";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useUpdateProfile } from "@/hooks/useUserProfile";
 import type { User } from "@/types/user";
 import { formatDateOfBirth } from "@/utils/dateUtils";
@@ -148,14 +150,18 @@ export function ProfileForm({ user }: ProfileFormProps) {
       <div className="grid gap-4 md:grid-cols-2">
         <div>
           <label className="text-sm font-medium mb-2 block">Gender</label>
-          <select
-            {...form.register("gender")}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          <Select
+            value={form.watch("gender") || ""}
+            onValueChange={(value) => form.setValue("gender", value as "male" | "female", { shouldDirty: true })}
           >
-            <option value="">Select gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
+            </SelectContent>
+          </Select>
           {form.formState.errors.gender && (
             <p className="text-sm text-destructive mt-1">
               {form.formState.errors.gender.message}
@@ -167,15 +173,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
           <label className="text-sm font-medium mb-2 block">
             Sexual Orientation
           </label>
-          <select
-            {...form.register("sexualOrientation")}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          <Select
+            value={form.watch("sexualOrientation") || ""}
+            onValueChange={(value) => form.setValue("sexualOrientation", value as "straight" | "gay" | "bisexual", { shouldDirty: true })}
           >
-            <option value="">Select orientation</option>
-            <option value="straight">Straight</option>
-            <option value="gay">Gay</option>
-            <option value="bisexual">Bisexual</option>
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select orientation" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="straight">Straight</SelectItem>
+              <SelectItem value="gay">Gay</SelectItem>
+              <SelectItem value="bisexual">Bisexual</SelectItem>
+            </SelectContent>
+          </Select>
           {form.formState.errors.sexualOrientation && (
             <p className="text-sm text-destructive mt-1">
               {form.formState.errors.sexualOrientation.message}
@@ -186,11 +196,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
       <div>
         <label className="text-sm font-medium mb-2 block">Biography</label>
-        <textarea
+        <Textarea
           {...form.register("biography")}
           placeholder="Tell us about yourself..."
           rows={4}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+          className="resize-none"
         />
         <p className="text-sm text-muted-foreground mt-1">
           {form.watch("biography")?.length || 0}/500 characters

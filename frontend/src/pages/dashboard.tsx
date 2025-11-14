@@ -10,7 +10,7 @@ import { calculateAge } from "@/utils/dateUtils";
 import {
   User as UserIcon,
   Search,
-  Heart,
+  Activity,
   MessageCircle,
   MapPin,
 } from "lucide-react";
@@ -55,7 +55,7 @@ export function Dashboard() {
             <CardContent>
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Avatar */}
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 mx-auto md:mx-0">
                   {profilePic ? (
                     <img
                       src={getPhotoUrl(profilePic.url)}
@@ -71,17 +71,19 @@ export function Dashboard() {
 
                 {/* User Info */}
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold">
-                    {user.firstName} {user.lastName}
-                    {user.dateOfBirth && (
-                      <span className="text-muted-foreground font-normal">
-                        , {calculateAge(user.dateOfBirth)}
-                      </span>
-                    )}
-                  </h2>
-                  <p className="text-muted-foreground text-sm mb-3">
-                    @{user.username}
-                  </p>
+                  <div className="text-center md:text-left">
+                    <h2 className="text-2xl font-bold">
+                      {user.firstName} {user.lastName}
+                      {user.dateOfBirth && (
+                        <span className="text-muted-foreground font-normal">
+                          , {calculateAge(user.dateOfBirth)}
+                        </span>
+                      )}
+                    </h2>
+                    <p className="text-muted-foreground text-sm mb-3">
+                      @{user.username}
+                    </p>
+                  </div>
 
                   {user.biography && (
                     <p className="text-sm mb-4 line-clamp-2">
@@ -109,7 +111,7 @@ export function Dashboard() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex md:flex-col gap-2">
+                <div className="flex md:flex-col gap-2 justify-center md:justify-start">
                   <Button variant="outline" asChild className="md:w-auto">
                     <Link to="/profile">Edit Profile</Link>
                   </Button>
@@ -118,29 +120,29 @@ export function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Quick Actions Grid */}
-          <div className="grid gap-4 md:grid-cols-3">
+          {/* Quick Actions Grid - Hidden on mobile */}
+          <div className="hidden md:grid gap-4 md:grid-cols-3">
             {/* Browse Profiles */}
-            <Card className="opacity-60">
+            <Card>
               <CardContent className="flex flex-col h-full">
-                <Search className="w-10 h-10 mb-3 text-muted-foreground" />
+                <Search className="w-10 h-10 mb-3 text-primary" />
                 <h3 className="font-semibold mb-2">Browse Profiles</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Discover people near you with similar interests
                 </p>
-                <Button disabled className="w-full mt-auto">
-                  Coming Soon
+                <Button asChild className="w-full mt-auto">
+                  <Link to="/browse">Browse</Link>
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Your Matches */}
-            <Card className="opacity-60">
+            {/* Activity History */}
+            <Card>
               <CardContent className="flex flex-col h-full">
-                <Heart className="w-10 h-10 mb-3 text-muted-foreground" />
-                <h3 className="font-semibold mb-2">Your Matches</h3>
+                <Activity className="w-10 h-10 mb-3 text-primary" />
+                <h3 className="font-semibold mb-2">Activity</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  See who liked you and start chatting
+                  See who liked you, matched with you, and viewed your profile
                 </p>
                 <Button disabled className="w-full mt-auto">
                   Coming Soon
@@ -149,15 +151,15 @@ export function Dashboard() {
             </Card>
 
             {/* Messages */}
-            <Card className="opacity-60">
+            <Card>
               <CardContent className="flex flex-col h-full">
-                <MessageCircle className="w-10 h-10 mb-3 text-muted-foreground" />
+                <MessageCircle className="w-10 h-10 mb-3 text-primary" />
                 <h3 className="font-semibold mb-2">Messages</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Chat with your matches and connections
                 </p>
-                <Button disabled className="w-full mt-auto">
-                  Coming Soon
+                <Button asChild className="w-full mt-auto">
+                  <Link to="/chat">Chat</Link>
                 </Button>
               </CardContent>
             </Card>

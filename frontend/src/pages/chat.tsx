@@ -216,7 +216,7 @@ export function Chat() {
       <div className="flex flex-col md:flex-row gap-6 h-full">
         {/* Matches Sidebar */}
         <Card
-          className={`flex flex-col w-full md:w-1/4 h-[calc(100vh-10rem)] ${
+          className={`flex flex-col w-full md:w-1/4 h-full ${
             selectedConversation ? "hidden md:flex" : "flex"
           }`}
         >
@@ -290,7 +290,7 @@ export function Chat() {
 
         {/* Chat Area */}
         <Card
-          className={`w-full md:w-3/4 flex flex-col p-0 max-h-[calc(100vh-10rem)] ${
+          className={`w-full md:w-3/4 flex flex-col p-0 h-full ${
             selectedConversation ? "flex" : "hidden md:flex"
           }`}
         >

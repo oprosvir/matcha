@@ -46,9 +46,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen w-screen flex flex-col bg-background">
+    <div className="h-screen w-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-40">
+      <header className="border-b bg-card sticky top-0 z-40 flex-shrink-0">
         <div className="container max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo + Nav */}
@@ -66,7 +66,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     <Link
                       key={link.path}
                       to={link.path}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ease-in-out ${
                         isActive
                           ? "bg-primary text-primary-foreground"
                           : link.disabled
@@ -116,10 +116,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="p-6 flex-1 flex flex-col">{children}</main>
+      <main className="p-6 pb-20 md:pb-6 flex-1 flex flex-col min-h-0 overflow-y-auto">{children}</main>
 
       {/* Footer - Hidden on mobile due to bottom nav */}
-      <footer className="hidden md:block border-t bg-card py-3 mt-auto">
+      <footer className="hidden md:block border-t bg-card py-3 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>
             &copy; 2025 Matcha. Made by{" "}
@@ -154,16 +154,16 @@ export function AppLayout({ children }: AppLayoutProps) {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex flex-col items-center justify-center gap-1 min-w-[60px] py-2 rounded-lg transition-colors ${
+                className={`flex flex-col items-center justify-center gap-1 min-w-[60px] py-2 rounded-lg transition-all duration-300 ease-in-out ${
                   isActive
-                    ? "text-primary"
+                    ? "bg-accent text-primary"
                     : link.disabled
                     ? "text-muted-foreground cursor-not-allowed"
                     : "text-foreground hover:text-primary"
                 } ${link.disabled ? "pointer-events-none" : ""}`}
               >
                 <div className="relative">
-                  <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
+                  <Icon className="w-6 h-6 transition-all duration-300 ease-in-out" strokeWidth={isActive ? 2.5 : 2} />
                   {link.path === "/chat" && unreadMessagesCount > 0 && (
                     <span className="absolute -top-1 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-blue-500 text-blue-500-foreground text-white rounded-full">
                       {unreadMessagesCount}
@@ -171,7 +171,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   )}
                 </div>
                 <span
-                  className={`text-[10px] ${
+                  className={`text-[10px] transition-all duration-300 ease-in-out ${
                     isActive ? "font-semibold" : "font-medium"
                   }`}
                 >

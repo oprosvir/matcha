@@ -113,7 +113,7 @@ export function Profile() {
           </CardContent>
         </Card>
 
-        <Card className="mt-6">
+        <Card>
           <CardHeader>
             <CardTitle>Interests</CardTitle>
           </CardHeader>
