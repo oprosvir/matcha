@@ -5,6 +5,7 @@ export const ProfileViewSchema = z.object({
   viewedAt: z.string(),
   viewer: z.object({
     id: z.string(),
+    username: z.string(),
     firstName: z.string(),
     lastName: z.string(),
     profilePicture: z.string().nullable(),

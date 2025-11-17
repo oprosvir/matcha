@@ -2,6 +2,7 @@ import { UserInterestDto } from "../user.dto";
 
 export class UserListItemDto {
   id: string;
+  username: string;
   profilePicture: string;
   firstName: string;
   lastName: string;

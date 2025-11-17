@@ -25,6 +25,7 @@ import {
   GetPublicProfileResponseDto,
 } from './dto';
 import { FindAllMatchesResponseDto } from './dto/find-all-matches/find-all-matches-response.dto';
+import { FindAllLikesResponseDto } from './dto/find-all-likes/find-all-likes-response.dto';
 import { RedisRepository } from 'src/redis/repositories/redis.repository';
 import { GetUsersRequestDto } from './dto/get-users/get-users-request.dto';
 import { GetUsersResponseDto, UserListItemDto } from './dto/get-users/get-users-response.dto';
@@ -138,6 +139,7 @@ export class UserService {
   private mapUserToPublicUserDto(user: User): PublicUserDto {
     return {
       id: user.id,
+      username: user.username,
       firstName: user.first_name,
       lastName: user.last_name,
       dateOfBirth: user.date_of_birth ? user.date_of_birth.toISOString() : null,
@@ -178,6 +180,7 @@ export class UserService {
 
     return {
       id: user.id,
+      username: user.username,
       profilePicture,
       firstName: user.first_name,
       lastName: user.last_name,
@@ -587,11 +590,19 @@ export class UserService {
     return this.mapUserToPublicUserDto(user);
   }
 
-  async getPublicProfile(currentUserId: string, targetUserId: string): Promise<GetPublicProfileResponseDto> {
-    const targetUser = await this.findPublicProfileById(targetUserId);
+  async findPublicProfileByUsername(username: string): Promise<PublicUserDto | null> {
+    const user: User | null = await this.usersRepository.findByUsername(username);
+    if (!user) return null;
+    return this.mapUserToPublicUserDto(user);
+  }
+
+  async getPublicProfile(currentUserId: string, targetUsername: string): Promise<GetPublicProfileResponseDto> {
+    const targetUser = await this.findPublicProfileByUsername(targetUsername);
     if (!targetUser) {
       throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND);
     }
+
+    const targetUserId = targetUser.id;
 
     // Check connection status
     const youLikedThem = await this.hasUserLikedUser(currentUserId, targetUserId);
@@ -871,16 +882,60 @@ export class UserService {
   async findAllMatches(userId: string): Promise<FindAllMatchesResponseDto> {
     const usersWhoUserLiked: LikeSent[] = await this.likesRepository.findAllUsersWhoUserLiked(userId);
     const usersWhoLikedUser: LikeReceived[] = await this.likesRepository.findAllUsersWhoLikedUserId(userId);
-    const usersWhoLikedUserSet: Set<string> = new Set(usersWhoLikedUser.map(like => like.from_user_id));
-    const matches: string[] = usersWhoUserLiked.filter(like => usersWhoLikedUserSet.has(like.to_user_id)).map(like => like.to_user_id);
+
+    // Create maps for timestamps
+    const usersWhoLikedUserMap = new Map(usersWhoLikedUser.map(like => [like.from_user_id, like.created_at]));
+    const usersWhoUserLikedMap = new Map(usersWhoUserLiked.map(like => [like.to_user_id, like.created_at]));
+
+    // Find matches and calculate match timestamp (max of the two like timestamps)
+    const matchesWithTimestamp: { userId: string; matchedAt: Date }[] = usersWhoUserLiked
+      .filter(like => usersWhoLikedUserMap.has(like.to_user_id))
+      .map(like => {
+        const sentAt = like.created_at;
+        const receivedAt = usersWhoLikedUserMap.get(like.to_user_id)!;
+        // Match happened when the second like was created (the later one)
+        const matchedAt = sentAt > receivedAt ? sentAt : receivedAt;
+        return { userId: like.to_user_id, matchedAt };
+      });
+
+    // Sort by match timestamp (most recent first)
+    matchesWithTimestamp.sort((a, b) => b.matchedAt.getTime() - a.matchedAt.getTime());
+
+    // Fetch user profiles in sorted order
     const matchesPublic: PublicUserDto[] = [];
-    for (const match of matches) {
-      const user = await this.findPublicProfileById(match);
+    for (const match of matchesWithTimestamp) {
+      const user = await this.findPublicProfileById(match.userId);
       if (user) {
         matchesPublic.push(user);
       }
     }
     return { users: matchesPublic };
+  }
+
+  async findAllLikes(userId: string): Promise<FindAllLikesResponseDto> {
+    const likesReceived: LikeReceived[] = await this.likesRepository.findAllUsersWhoLikedUserId(userId);
+    const userIds = likesReceived.map(like => like.from_user_id);
+    const users = await this.usersRepository.findAllPreviewByIds(userIds);
+
+    // Create a map for quick lookup
+    const usersMap = new Map(users.map(user => [user.id, user]));
+
+    return {
+      likes: likesReceived.map(like => {
+        const liker = usersMap.get(like.from_user_id);
+        return {
+          id: like.from_user_id, // Using from_user_id as the like ID
+          likedAt: like.created_at.toISOString(),
+          liker: {
+            id: liker.id,
+            username: liker.username,
+            firstName: liker.firstName,
+            lastName: liker.lastName,
+            profilePicture: liker.profilePicture,
+          }
+        };
+      })
+    };
   }
 
   async hasUserLikedUser(fromUserId: string, toUserId: string): Promise<boolean> {

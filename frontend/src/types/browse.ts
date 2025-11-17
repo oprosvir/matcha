@@ -16,6 +16,7 @@ export type LocationList = z.infer<typeof LocationListSchema>;
 
 export const UserListItemSchema = z.object({
   id: z.string(),
+  username: z.string(),
   profilePicture: z.string(),
   firstName: z.string(),
   lastName: z.string(),

@@ -14,6 +14,7 @@ import {
 } from './dto';
 import { PrivateUserDto } from './dto';
 import { FindAllMatchesResponseDto } from './dto/find-all-matches/find-all-matches-response.dto';
+import { FindAllLikesResponseDto } from './dto/find-all-likes/find-all-likes-response.dto';
 import { LikeUserRequestDto } from './dto/like-user/like-user-request.dto';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import { GetLocationListResponseDto } from './dto/get-location-list/get-location-list.dto';
@@ -38,6 +39,13 @@ export class UserController {
   async findAllMatches(@CurrentUser('sub') userId: string): Promise<{ success: boolean, data: FindAllMatchesResponseDto, messageKey: string }> {
     const matches: FindAllMatchesResponseDto = await this.userService.findAllMatches(userId);
     return { success: true, data: matches, messageKey: 'SUCCESS_FIND_ALL_MATCHES' };
+  }
+
+  @Get('likes')
+  @UseGuards(AuthGuard)
+  async findAllLikes(@CurrentUser('sub') userId: string): Promise<{ success: boolean, data: FindAllLikesResponseDto, messageKey: string }> {
+    const likes: FindAllLikesResponseDto = await this.userService.findAllLikes(userId);
+    return { success: true, data: likes, messageKey: 'SUCCESS_FIND_ALL_LIKES' };
   }
 
   @Get('location-list')
@@ -111,17 +119,19 @@ export class UserController {
   }
 
   // Note: This route must be defined AFTER all other GET routes
-  // to prevent :userId parameter from intercepting specific route names
-  @Get(':userId')
+  // to prevent :username parameter from intercepting specific route names
+  @Get(':username')
   @UseGuards(AuthGuard)
   async getPublicProfile(
     @CurrentUser('sub') currentUserId: string,
-    @Param('userId') targetUserId: string
+    @Param('username') targetUsername: string
   ): Promise<{ success: boolean, data: GetPublicProfileResponseDto, messageKey: string }> {
-    if (currentUserId === targetUserId) {
+    // Get current user's username to compare
+    const currentUser = await this.userService.findById(currentUserId);
+    if (currentUser && currentUser.username === targetUsername) {
       throw new CustomHttpException('CANNOT_VIEW_OWN_PROFILE', 'Cannot view your own profile this way', 'ERROR_CANNOT_VIEW_OWN_PROFILE', HttpStatus.BAD_REQUEST);
     }
-    const result: GetPublicProfileResponseDto = await this.userService.getPublicProfile(currentUserId, targetUserId);
+    const result: GetPublicProfileResponseDto = await this.userService.getPublicProfile(currentUserId, targetUsername);
     return { success: true, data: result, messageKey: 'SUCCESS_GET_PUBLIC_PROFILE' };
   }
 

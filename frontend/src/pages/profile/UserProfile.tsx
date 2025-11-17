@@ -29,14 +29,16 @@ import { getPhotoUrl } from "@/utils/photoUtils";
 import { calculateDistance, formatDistance } from "@/utils/distanceUtils";
 
 export function UserProfile() {
-  const { userId } = useParams<{ userId: string }>();
+  const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { profile, isLoading, isError } = usePublicProfile(userId || null);
+  const { profile, isLoading, isError } = usePublicProfile(username || null);
   const recordView = useRecordProfileView();
   const { data: currentUser } = useCurrentUser();
   const { likeUser, isPending: isLiking } = useLikeUser();
   const { unlikeUser, isPending: isUnliking } = useUnlikeUser();
+
+  const userId = profile?.user.id;
 
   // Record profile view on mount
   useEffect(() => {
@@ -52,13 +54,13 @@ export function UserProfile() {
     if (profile?.connectionStatus.youLikedThem) {
       unlikeUser(userId, {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['public-profile', userId] });
+          queryClient.invalidateQueries({ queryKey: ['public-profile', username] });
         },
       });
     } else {
       likeUser(userId, {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['public-profile', userId] });
+          queryClient.invalidateQueries({ queryKey: ['public-profile', username] });
         },
       });
     }

@@ -313,7 +313,7 @@ export function Chat() {
                     <div
                       className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() =>
-                        navigate(`/profile/${selectedConversation.profilePreview.id}`)
+                        navigate(`/profile/${selectedConversation.profilePreview.username}`)
                       }
                     >
                       <Avatar className="h-10 w-10">

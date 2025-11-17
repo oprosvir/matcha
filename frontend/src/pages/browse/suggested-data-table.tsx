@@ -193,7 +193,7 @@ export function SuggestedDataTable() {
           table={table}
           columns={columns}
           isLoading={isLoading}
-          onRowClick={(user) => navigate(`/profile/${user.id}`)}
+          onRowClick={(user) => navigate(`/profile/${user.username}`)}
         />
       </div>
     </div>

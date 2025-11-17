@@ -95,7 +95,7 @@ function BrowseAllTable({
       hasMore={hasMore}
       isFetchingNextPage={isFetchingNextPage}
       observerTarget={observerTarget}
-      onRowClick={(user) => navigate(`/profile/${user.id}`)}
+      onRowClick={(user) => navigate(`/profile/${user.username}`)}
     />
   );
 }

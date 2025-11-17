@@ -13,6 +13,7 @@ export class UserInterestDto {
 
 export class PublicUserDto {
   id: string;
+  username: string;
   firstName: string;
   lastName: string;
   dateOfBirth: string | null;
@@ -32,7 +33,6 @@ export class PublicUserDto {
 
 export class PrivateUserDto extends PublicUserDto {
   email: string;
-  username: string;
   isEmailVerified: boolean;
   profileCompleted: boolean;
 }

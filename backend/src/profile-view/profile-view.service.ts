@@ -34,13 +34,25 @@ export class ProfileViewService {
   async getProfileViews(userId: string): Promise<GetProfileViewResponseDto> {
     const profileViews: ProfileView[] = await this.profileViewRepository.getProfileViews(userId);
     const users = await this.userRepository.findAllPreviewByIds(profileViews.map(profileView => profileView.viewer_id));
+
+    // Create a map for quick lookup
+    const usersMap = new Map(users.map(user => [user.id, user]));
+
     return {
-      users: users.map(user => ({
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profilePicture: user.profilePicture,
-      }))
+      profileViews: profileViews.map(view => {
+        const viewer = usersMap.get(view.viewer_id);
+        return {
+          id: view.id,
+          viewedAt: view.viewed_at.toISOString(),
+          viewer: {
+            id: viewer.id,
+            username: viewer.username,
+            firstName: viewer.firstName,
+            lastName: viewer.lastName,
+            profilePicture: viewer.profilePicture,
+          }
+        };
+      })
     };
   }
 }

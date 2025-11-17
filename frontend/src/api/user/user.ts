@@ -1,7 +1,7 @@
 import apiClient from '@/lib/apiClient';
 import { parseApiResponse } from '../parseResponse';
 import { createApiResponseSchema } from '../schema';
-import { UserSchema, type SexualOrientation, type Gender, type User, type Matches, MatchesSchema, ProfileWithStatusSchema, type ProfileWithStatus } from '@/types/user';
+import { UserSchema, type SexualOrientation, type Gender, type User, type Matches, MatchesSchema, type Like, LikesResponseSchema, ProfileWithStatusSchema, type ProfileWithStatus } from '@/types/user';
 import { getToastMessage } from '@/lib/messageMap';
 import { z } from 'zod';
 import { type LocationEntry, LocationListSchema, type GetUsersResponse, GetUsersResponseSchema } from '@/types/browse';
@@ -96,9 +96,9 @@ export const userApi = {
     return response.data.user;
   },
 
-  getPublicProfile: async (userId: string): Promise<ProfileWithStatus> => {
+  getPublicProfile: async (username: string): Promise<ProfileWithStatus> => {
     const response = await parseApiResponse(
-      apiClient.get(`/users/${userId}`),
+      apiClient.get(`/users/${username}`),
       createApiResponseSchema(ProfileWithStatusSchema)
     );
 
@@ -139,6 +139,14 @@ export const userApi = {
       throw new Error(getToastMessage(response.messageKey));
     }
     return response.data.users;
+  },
+
+  getLikes: async (): Promise<Like[]> => {
+    const response = await parseApiResponse(apiClient.get('/users/likes'), createApiResponseSchema(LikesResponseSchema));
+    if (!response.success) {
+      throw new Error(getToastMessage(response.messageKey));
+    }
+    return response.data.likes;
   },
 
   getUsers: async (params?: {

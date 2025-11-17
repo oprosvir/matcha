@@ -548,6 +548,7 @@ export class UsersRepository {
       const result = await this.db.query<any>(`
         SELECT
           u.id,
+          u.username,
           u.first_name,
           u.last_name,
           COALESCE(
@@ -561,6 +562,7 @@ export class UsersRepository {
 
       return result.rows.map(row => ({
         id: row.id,
+        username: row.username,
         firstName: row.first_name,
         lastName: row.last_name,
         profilePicture: row.profile_picture,

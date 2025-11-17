@@ -44,6 +44,7 @@ export type User = z.infer<typeof UserSchema>;
 
 export const ProfileSchema = z.object({
   id: z.string(),
+  username: z.string(),
   firstName: z.string(),
   lastName: z.string(),
   gender: GenderSchema.nullable(),
@@ -78,6 +79,7 @@ export type ProfileWithStatus = z.infer<typeof ProfileWithStatusSchema>;
 
 export const ProfilePreviewSchema = z.object({
   id: z.string(),
+  username: z.string(),
   firstName: z.string(),
   lastName: z.string(),
   profilePicture: z.string(),
@@ -86,6 +88,18 @@ export type ProfilePreview = z.infer<typeof ProfilePreviewSchema>;
 
 export const MatchesSchema = z.array(ProfileSchema);
 export type Matches = z.infer<typeof MatchesSchema>;
+
+export const LikeSchema = z.object({
+  id: z.string(),
+  likedAt: z.string(),
+  liker: ProfilePreviewSchema,
+});
+export type Like = z.infer<typeof LikeSchema>;
+
+export const LikesResponseSchema = z.object({
+  likes: z.array(LikeSchema),
+});
+export type LikesResponse = z.infer<typeof LikesResponseSchema>;
 
 export const RefreshTokenSchema = z.object({
   refreshToken: z.string(),
