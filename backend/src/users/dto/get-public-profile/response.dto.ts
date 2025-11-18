@@ -4,6 +4,7 @@ export class ConnectionStatusDto {
   youLikedThem: boolean;
   theyLikedYou: boolean;
   isConnected: boolean;
+  youBlockedThem: boolean;
 }
 
 export class GetPublicProfileResponseDto {

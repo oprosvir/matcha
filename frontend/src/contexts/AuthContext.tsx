@@ -8,7 +8,7 @@ import {
 import type { ReactNode } from "react";
 import { tokenManager } from "@/utils/tokenManager";
 import { authApi } from "@/api/auth/auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { userApi } from "@/api/user/user";
 import type { User } from "@/types/user";
 
@@ -26,6 +26,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshTimer, setRefreshTimer] = useState<ReturnType<
@@ -54,8 +55,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       tokenManager.clearToken();
       setIsAuthenticated(false);
+      // Clear all cached data on logout
+      queryClient.clear();
     }
-  }, [refreshTimer]);
+  }, [refreshTimer, queryClient]);
 
   const refreshAccessToken = useCallback(async (): Promise<boolean> => {
     try {
@@ -90,11 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(
     (accessToken: string) => {
+      // Clear old user's cached data before signing in new user
+      queryClient.clear();
       tokenManager.setToken(accessToken);
       setIsAuthenticated(true);
       scheduleTokenRefresh();
     },
-    [scheduleTokenRefresh]
+    [scheduleTokenRefresh, queryClient]
   );
 
   useEffect(() => {

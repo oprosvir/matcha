@@ -25,7 +25,7 @@ export const UserListItemSchema = z.object({
   cityName: z.string().nullable(),
   countryName: z.string().nullable(),
   interests: z.array(InterestSchema),
-  distance: z.number().optional(),
+  distance: z.number().optional(), // Distance in km from current user (only for suggested users)
 });
 
 export const GetUsersResponseSchema = z.object({

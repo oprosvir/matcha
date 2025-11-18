@@ -1,6 +1,6 @@
 import { IsArray, IsNumber, IsOptional, IsString, Min, Max, MinLength, MaxLength } from "class-validator";
 import { Type, Transform } from "class-transformer";
-import { type Sort } from "../get-users/get-users-request.dto";
+import { type Sort } from "../get-users/request.dto";
 
 export class GetSuggestedUsersRequestDto {
   @IsOptional()

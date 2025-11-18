@@ -7,10 +7,12 @@ import { DatabaseService } from 'src/database/database.service';
 import { LikesRepository } from './repositories/likes.repository';
 import { LikeSent, LikeReceived } from './repositories/likes.repository';
 import { BlocksRepository } from './repositories/blocks.repository';
+import { ReportsRepository } from './repositories/reports.repository';
 import { PhotosRepository } from './repositories/photos.repository';
 import { ChatRepository } from 'src/chat/repositories/chat.repository';
 import { NotificationService } from 'src/notifications/notification.service';
 import { NotificationType } from 'src/common/enums/notification-type';
+import { ReportReason } from 'src/common/enums/report-reason.enum';
 import { z } from 'zod';
 import {
   CreateUserRequestDto,
@@ -24,13 +26,13 @@ import {
   LocationEntryDto,
   GetPublicProfileResponseDto,
 } from './dto';
-import { FindAllMatchesResponseDto } from './dto/find-all-matches/find-all-matches-response.dto';
-import { FindAllLikesResponseDto } from './dto/find-all-likes/find-all-likes-response.dto';
-import { FindAllLikesSentResponseDto } from './dto/find-all-likes-sent/find-all-likes-sent-response.dto';
+import { FindAllMatchesResponseDto } from './dto/find-all-matches/response.dto';
+import { FindAllLikesResponseDto } from './dto/find-all-likes/response.dto';
+import { FindAllLikesSentResponseDto } from './dto/find-all-likes-sent/response.dto';
 import { RedisRepository } from 'src/redis/repositories/redis.repository';
-import { GetUsersRequestDto } from './dto/get-users/get-users-request.dto';
-import { GetUsersResponseDto, UserListItemDto } from './dto/get-users/get-users-response.dto';
-import { GetSuggestedUsersRequestDto } from './dto/get-suggested-users/get-suggested-users-request.dto';
+import { GetUsersRequestDto } from './dto/get-users/request.dto';
+import { GetUsersResponseDto, UserListItemDto } from './dto/get-users/response.dto';
+import { GetSuggestedUsersRequestDto } from './dto/get-suggested-users/request.dto';
 import { Gender, SexualOrientation } from './enums/user.enums';
 
 // Zod schemas for external API validation
@@ -102,6 +104,7 @@ export class UserService {
     private readonly db: DatabaseService,
     private readonly likesRepository: LikesRepository,
     private readonly blocksRepository: BlocksRepository,
+    private readonly reportsRepository: ReportsRepository,
     private readonly photosRepository: PhotosRepository,
     private readonly chatRepository: ChatRepository,
     private readonly notificationService: NotificationService,
@@ -376,7 +379,9 @@ export class UserService {
 
       const likedUsers = await this.likesRepository.findAllUsersWhoUserLiked(userId);
       const likedUserIds = new Set(likedUsers.map(like => like.to_user_id));
-      const blockedUsers = await this.blocksRepository.findAllUsersBlockedByUser(userId);
+
+      // Get all blocked users (both who I blocked and who blocked me)
+      const blockedUsers = await this.blocksRepository.getAllBlockedUserIds(userId);
       const blockedUserIds = new Set(blockedUsers);
 
       const filters = {
@@ -614,6 +619,7 @@ export class UserService {
     return this.mapUserToPublicUserDto(user);
   }
 
+  /* Get another user's public profile with connection status and online status */
   async getPublicProfile(currentUserId: string, targetUsername: string): Promise<GetPublicProfileResponseDto> {
     const targetUser = await this.findPublicProfileByUsername(targetUsername);
     if (!targetUser) {
@@ -622,10 +628,24 @@ export class UserService {
 
     const targetUserId = targetUser.id;
 
+    // Prevent viewing own profile
+    if (currentUserId === targetUserId) {
+      throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND);
+    }
+
+    // Check if target user blocked current user - if yes, hide profile
+    const theyBlockedYou = await this.blocksRepository.hasUserBlockedUser(targetUserId, currentUserId);
+    if (theyBlockedYou) {
+      throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND);
+    }
+
     // Check connection status
     const youLikedThem = await this.hasUserLikedUser(currentUserId, targetUserId);
     const theyLikedYou = await this.hasUserLikedUser(targetUserId, currentUserId);
     const isConnected = youLikedThem && theyLikedYou;
+
+    // Check if current user blocked target user (one-way check for UI)
+    const youBlockedThem = await this.blocksRepository.hasUserBlockedUser(currentUserId, targetUserId);
 
     // Check online status (online if active in last 5 minutes)
     const isOnline = targetUser.lastTimeActive
@@ -638,6 +658,7 @@ export class UserService {
         youLikedThem,
         theyLikedYou,
         isConnected,
+        youBlockedThem,
       },
       isOnline,
     };
@@ -930,19 +951,25 @@ export class UserService {
     return { users: matchesPublic };
   }
 
+  /* Find all users who liked the given user, excluding blocked users */
   async findAllLikes(userId: string): Promise<FindAllLikesResponseDto> {
     const likesReceived: LikeReceived[] = await this.likesRepository.findAllUsersWhoLikedUserId(userId);
-    const userIds = likesReceived.map(like => like.from_user_id);
+
+    const blockedUserIds = await this.blocksRepository.getAllBlockedUserIds(userId);
+    const blockedSet = new Set(blockedUserIds);
+
+    const filteredLikes = likesReceived.filter(like => !blockedSet.has(like.from_user_id));
+
+    const userIds = filteredLikes.map(like => like.from_user_id);
     const users = await this.usersRepository.findAllPreviewByIds(userIds);
 
-    // Create a map for quick lookup
     const usersMap = new Map(users.map(user => [user.id, user]));
 
     return {
-      likes: likesReceived.map(like => {
+      likes: filteredLikes.map(like => {
         const liker = usersMap.get(like.from_user_id);
         return {
-          id: like.from_user_id, // Using from_user_id as the like ID
+          id: like.from_user_id,
           likedAt: like.created_at.toISOString(),
           liker: {
             id: liker.id,
@@ -956,19 +983,25 @@ export class UserService {
     };
   }
 
+  /* Find all users whom the given user has liked, excluding blocked users */
   async findAllLikesSent(userId: string): Promise<FindAllLikesSentResponseDto> {
     const likesSent: LikeSent[] = await this.likesRepository.findAllUsersWhoUserLiked(userId);
-    const userIds = likesSent.map(like => like.to_user_id);
+
+    const blockedUserIds = await this.blocksRepository.getAllBlockedUserIds(userId);
+    const blockedSet = new Set(blockedUserIds);
+
+    const filteredLikes = likesSent.filter(like => !blockedSet.has(like.to_user_id));
+
+    const userIds = filteredLikes.map(like => like.to_user_id);
     const users = await this.usersRepository.findAllPreviewByIds(userIds);
 
-    // Create a map for quick lookup
     const usersMap = new Map(users.map(user => [user.id, user]));
 
     return {
-      likes: likesSent.map(like => {
+      likes: filteredLikes.map(like => {
         const liked = usersMap.get(like.to_user_id);
         return {
-          id: like.to_user_id, // Using to_user_id as the like ID
+          id: like.to_user_id,
           likedAt: like.created_at.toISOString(),
           liked: {
             id: liked.id,
@@ -1082,5 +1115,92 @@ export class UserService {
       }
     }
     return { locations: locationEntries };
+  }
+
+  /* Block user flow:
+    1. Check if blockerId === blockedId => error
+    2. Check if blocked user exists => error if not
+    3. Check if they were matched (mutual like) - before transaction
+    4. Start transaction
+      a. Unlike both sides if they liked each other
+      b. Block the user
+    5. Commit transaction
+    6. Send unlike notification AFTER transaction if they were matched
+    7. Note: We don't delete the chat - it will just be filtered out from conversations list
+  */
+  async blockUser(blockerId: string, blockedId: string): Promise<void> {
+    if (blockerId === blockedId) {
+      throw new CustomHttpException('SELF_BLOCK_NOT_ALLOWED', 'You cannot block yourself.', 'ERROR_SELF_BLOCK_NOT_ALLOWED', HttpStatus.BAD_REQUEST);
+    }
+
+    const blockedUser = await this.usersRepository.findById(blockedId);
+    if (!blockedUser) {
+      throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND);
+    }
+
+    const blockerLikedBlocked = await this.likesRepository.findByFromUserIdAndToUserId(blockerId, blockedId);
+    const blockedLikedBlocker = await this.likesRepository.findByFromUserIdAndToUserId(blockedId, blockerId);
+    const wereMatched = blockerLikedBlocked && blockedLikedBlocker;
+
+    const client = await this.db.getClient();
+    try {
+      await client.query('BEGIN');
+
+      if (blockerLikedBlocked) {
+        await this.likesRepository.unLikeUser(blockerId, blockedId);
+        await this.usersRepository.updateFameRating(blockedId);
+      }
+      if (blockedLikedBlocker) {
+        await this.likesRepository.unLikeUser(blockedId, blockerId);
+        await this.usersRepository.updateFameRating(blockerId);
+      }
+
+      await this.blocksRepository.blockUser(blockerId, blockedId);
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    if (wereMatched) {
+      try {
+        await this.notificationService.createNotification({
+          userId: blockedId,
+          type: NotificationType.UNLIKE,
+          sourceUserId: blockerId
+        });
+      } catch (error) {
+        console.error('Failed to send unlike notification:', error);
+      }
+    }
+  }
+
+  async unblockUser(blockerId: string, blockedId: string): Promise<void> {
+    if (blockerId === blockedId) {
+      throw new CustomHttpException('SELF_UNBLOCK_NOT_ALLOWED', 'You cannot unblock yourself.', 'ERROR_SELF_UNBLOCK_NOT_ALLOWED', HttpStatus.BAD_REQUEST);
+    }
+
+    const isBlocked = await this.blocksRepository.isBlocked(blockerId, blockedId);
+    if (!isBlocked) {
+      throw new CustomHttpException('USER_NOT_BLOCKED', 'You have not blocked this user.', 'ERROR_USER_NOT_BLOCKED', HttpStatus.BAD_REQUEST);
+    }
+
+    await this.blocksRepository.unblockUser(blockerId, blockedId);
+  }
+
+  async reportUser(reporterId: string, reportedId: string, reason: ReportReason): Promise<void> {
+    if (reporterId === reportedId) {
+      throw new CustomHttpException('SELF_REPORT_NOT_ALLOWED', 'You cannot report yourself.', 'ERROR_SELF_REPORT_NOT_ALLOWED', HttpStatus.BAD_REQUEST);
+    }
+
+    const reportedUser = await this.usersRepository.findById(reportedId);
+    if (!reportedUser) {
+      throw new CustomHttpException('USER_NOT_FOUND', 'User not found', 'ERROR_USER_NOT_FOUND', HttpStatus.NOT_FOUND);
+    }
+
+    await this.reportsRepository.reportUser(reporterId, reportedId, reason);
   }
 }

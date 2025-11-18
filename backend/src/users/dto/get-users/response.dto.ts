@@ -11,7 +11,7 @@ export class UserListItemDto {
   cityName: string | null;
   countryName: string | null;
   interests: UserInterestDto[];
-  distance?: number; // Distance in km from current user
+  distance?: number; // Distance in km from current user (only for suggested users)
 }
 
 export class GetUsersResponseDto {

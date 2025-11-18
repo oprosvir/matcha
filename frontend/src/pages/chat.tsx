@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, ArrowLeft } from "lucide-react";
+import { Send, ArrowLeft, MoreVertical, Ban, Flag } from "lucide-react";
 import { useConversations } from "@/hooks/useConversations";
 import type { Conversation } from "@/types/chat";
 import { useMessages } from "@/hooks/useMessages";
@@ -16,6 +16,16 @@ import { useChat } from "@/contexts/ChatContext";
 import { getInitials } from "@/lib/utils";
 import { getPhotoUrl } from "@/utils/photoUtils";
 import { useNavigate, useSearchParams } from "react-router";
+import { usePublicProfile } from "@/hooks/usePublicProfile";
+import { useUserActions } from "@/hooks/useUserActions";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BlockUserDialog } from "@/components/BlockUserDialog";
+import { ReportUserDialog } from "@/components/ReportUserDialog";
 
 function ConversationCardContent({
   conversation,
@@ -198,11 +208,33 @@ function ConversationCardContent({
 export function Chat() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
   const { data: conversations, isLoading: conversationsLoading } =
     useConversations();
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState<string>("fake_account");
+
+  // Fetch public profile for connection status
+  const { profile } = usePublicProfile(selectedConversation?.profilePreview.username || null);
+  const connectionStatus = profile?.connectionStatus;
+  const userId = profile?.user.id;
+
+  // Use shared user actions hook
+  const { blockMutation, unblockMutation, reportMutation } = useUserActions({
+    username: selectedConversation?.profilePreview.username,
+    onBlockSuccess: () => {
+      setBlockDialogOpen(false);
+      navigate('/chat');
+      setSelectedConversation(null);
+    },
+    onReportSuccess: () => {
+      setReportDialogOpen(false);
+      setSelectedReportReason("fake_account");
+    },
+  });
 
   // Sync selected conversation with URL parameter
   useEffect(() => {
@@ -367,6 +399,34 @@ export function Chat() {
                       </div>
                     </div>
                   </div>
+                  {/* 3-dot menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {connectionStatus?.youBlockedThem ? (
+                        <DropdownMenuItem
+                          onClick={() => userId && unblockMutation.mutate(userId)}
+                          disabled={unblockMutation.isPending}
+                        >
+                          <Ban className="mr-2 h-4 w-4" />
+                          {unblockMutation.isPending ? "Unblocking..." : "Unblock User"}
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onClick={() => setBlockDialogOpen(true)}>
+                          <Ban className="mr-2 h-4 w-4" />
+                          Block User
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => setReportDialogOpen(true)}>
+                        <Flag className="mr-2 h-4 w-4" />
+                        Report User
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardHeader>
 
@@ -387,6 +447,26 @@ export function Chat() {
           )}
         </Card>
       </div>
+
+      {/* Block User Dialog */}
+      <BlockUserDialog
+        open={blockDialogOpen}
+        onOpenChange={setBlockDialogOpen}
+        onConfirm={() => userId && blockMutation.mutate(userId)}
+        isPending={blockMutation.isPending}
+        userName={selectedConversation?.profilePreview.firstName}
+      />
+
+      {/* Report User Dialog */}
+      <ReportUserDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        onConfirm={(reason) => userId && reportMutation.mutate({ userId, reason })}
+        isPending={reportMutation.isPending}
+        userName={selectedConversation?.profilePreview.firstName}
+        selectedReason={selectedReportReason}
+        onReasonChange={setSelectedReportReason}
+      />
     </AppLayout>
   );
 }

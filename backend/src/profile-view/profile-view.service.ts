@@ -4,12 +4,18 @@ import { GetProfileViewResponseDto } from './dto/get-profile-view/get-profile-vi
 import { ProfileViewRepository } from './repository/profile-view.repository';
 import { ProfileView } from './repository/profile-view.repository';
 import { UsersRepository } from 'src/users/repositories/users.repository';
+import { BlocksRepository } from 'src/users/repositories/blocks.repository';
 import { NotificationType } from 'src/common/enums/notification-type';
 import { NotificationService } from 'src/notifications/notification.service';
 
 @Injectable()
 export class ProfileViewService {
-  constructor(private readonly profileViewRepository: ProfileViewRepository, private readonly userRepository: UsersRepository, private readonly notificationService: NotificationService) { }
+  constructor(
+    private readonly profileViewRepository: ProfileViewRepository,
+    private readonly userRepository: UsersRepository,
+    private readonly blocksRepository: BlocksRepository,
+    private readonly notificationService: NotificationService
+  ) { }
 
   async createProfileView(currentUserId: string, createProfileViewRequestDto: CreateProfileViewRequestDto) {
     const mostRecentProfileView: ProfileView | null = await this.profileViewRepository.getMostRecentProfileView(createProfileViewRequestDto.userId);
@@ -33,13 +39,21 @@ export class ProfileViewService {
 
   async getProfileViews(userId: string): Promise<GetProfileViewResponseDto> {
     const profileViews: ProfileView[] = await this.profileViewRepository.getProfileViews(userId);
-    const users = await this.userRepository.findAllPreviewByIds(profileViews.map(profileView => profileView.viewer_id));
+
+    // Get users who blocked the current user (only hide views from users who blocked ME)
+    const blockedByUserIds = await this.blocksRepository.findAllUsersWhoBlockedUser(userId);
+    const blockedBySet = new Set(blockedByUserIds);
+
+    // Filter out views from users who blocked the current user
+    const filteredProfileViews = profileViews.filter(view => !blockedBySet.has(view.viewer_id));
+
+    const users = await this.userRepository.findAllPreviewByIds(filteredProfileViews.map(profileView => profileView.viewer_id));
 
     // Create a map for quick lookup
     const usersMap = new Map(users.map(user => [user.id, user]));
 
     return {
-      profileViews: profileViews.map(view => {
+      profileViews: filteredProfileViews.map(view => {
         const viewer = usersMap.get(view.viewer_id);
         return {
           id: view.id,

@@ -5,6 +5,7 @@ import { PhotosController } from './photos.controller';
 import { UsersRepository } from './repositories/users.repository';
 import { LikesRepository } from './repositories/likes.repository';
 import { BlocksRepository } from './repositories/blocks.repository';
+import { ReportsRepository } from './repositories/reports.repository';
 import { PhotosRepository } from './repositories/photos.repository';
 import { PhotosService } from './photos.service';
 import { DatabaseModule } from '../database/database.module';
@@ -16,7 +17,7 @@ import { RedisModule } from '../redis/redis.module';
 @Module({
   imports: [DatabaseModule, InterestModule, forwardRef(() => ChatModule), forwardRef(() => NotificationModule), RedisModule],
   controllers: [UserController, PhotosController],
-  providers: [UserService, PhotosService, UsersRepository, LikesRepository, BlocksRepository, PhotosRepository],
+  providers: [UserService, PhotosService, UsersRepository, LikesRepository, BlocksRepository, ReportsRepository, PhotosRepository],
   exports: [UserService, PhotosService, UsersRepository, BlocksRepository, PhotosRepository],
 })
 export class UserModule { }

@@ -225,7 +225,7 @@ export const userApi = {
 
   likeUser: async (userId: string): Promise<void> => {
     const response = await parseApiResponse(
-      apiClient.post('/users/like', { userId }),
+      apiClient.post(`/users/${userId}/likes`),
       createApiResponseSchema(z.void()))
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
@@ -234,13 +234,41 @@ export const userApi = {
 
   unlikeUser: async (userId: string): Promise<void> => {
     const response = await parseApiResponse(
-      apiClient.post('/users/unlike', { userId }),
+      apiClient.delete(`/users/${userId}/likes`),
       createApiResponseSchema(z.void()))
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
     }
+  },
 
-    return response.data;
+  blockUser: async (userId: string): Promise<void> => {
+    const response = await parseApiResponse(
+      apiClient.post(`/users/${userId}/block`),
+      createApiResponseSchema(z.object({ message: z.string() }))
+    );
+    if (!response.success) {
+      throw new Error(getToastMessage(response.messageKey));
+    }
+  },
+
+  unblockUser: async (userId: string): Promise<void> => {
+    const response = await parseApiResponse(
+      apiClient.delete(`/users/${userId}/block`),
+      createApiResponseSchema(z.object({ message: z.string() }))
+    );
+    if (!response.success) {
+      throw new Error(getToastMessage(response.messageKey));
+    }
+  },
+
+  reportUser: async (userId: string, reason: string): Promise<void> => {
+    const response = await parseApiResponse(
+      apiClient.post(`/users/${userId}/report`, { reason }),
+      createApiResponseSchema(z.object({ message: z.string() }))
+    );
+    if (!response.success) {
+      throw new Error(getToastMessage(response.messageKey));
+    }
   },
 
   resolveLocationByCity: async (cityName: string, countryName: string): Promise<{ latitude: number; longitude: number }> => {

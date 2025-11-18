@@ -28,4 +28,4 @@ export * from './upload-photo/upload-photo-request.dto';
 export * from './upload-photo/upload-photo-response.dto';
 
 // Get public profile
-export * from './get-public-profile/get-public-profile-response.dto';
+export * from './get-public-profile/response.dto';

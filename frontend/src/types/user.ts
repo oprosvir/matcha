@@ -67,6 +67,7 @@ export const ConnectionStatusSchema = z.object({
   youLikedThem: z.boolean(),
   theyLikedYou: z.boolean(),
   isConnected: z.boolean(),
+  youBlockedThem: z.boolean(),
 });
 export type ConnectionStatus = z.infer<typeof ConnectionStatusSchema>;
 

@@ -5,12 +5,21 @@ import { useRecordProfileView } from "@/hooks/useRecordProfileView";
 import { useCurrentUser } from "@/hooks/useUserProfile";
 import { useLikeUser } from "@/hooks/useLikeUser";
 import { useUnlikeUser } from "@/hooks/useUnlikeUser";
-import { useEffect } from "react";
+import { useUserActions } from "@/hooks/useUserActions";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BlockUserDialog } from "@/components/BlockUserDialog";
+import { ReportUserDialog } from "@/components/ReportUserDialog";
 import {
   MapPin,
   Heart,
@@ -23,6 +32,9 @@ import {
   Calendar,
   Users,
   Search,
+  MoreVertical,
+  Ban,
+  Flag,
 } from "lucide-react";
 import { calculateAge, formatMemberSince, formatLastSeen } from "@/utils/dateUtils";
 import { getPhotoUrl } from "@/utils/photoUtils";
@@ -88,6 +100,24 @@ export function UserProfile() {
     navigate(`/chat?with=${username}`);
   };
 
+  // State for dialogs
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState<string>("fake_account");
+
+  // Use shared user actions hook
+  const { blockMutation, unblockMutation, reportMutation } = useUserActions({
+    username,
+    onBlockSuccess: () => {
+      setBlockDialogOpen(false);
+      navigate('/browse');
+    },
+    onReportSuccess: () => {
+      setReportDialogOpen(false);
+      setSelectedReportReason("fake_account");
+    },
+  });
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -131,12 +161,41 @@ export function UserProfile() {
   return (
     <AppLayout>
       <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
-        {/* Header with back button */}
-        <div className="flex items-center gap-2">
+        {/* Header with back button and actions */}
+        <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
+
+          {/* 3-dot menu for Block/Report */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {connectionStatus.youBlockedThem ? (
+                <DropdownMenuItem
+                  onClick={() => userId && unblockMutation.mutate(userId)}
+                  disabled={unblockMutation.isPending}
+                >
+                  <Ban className="mr-2 h-4 w-4" />
+                  {unblockMutation.isPending ? "Unblocking..." : "Unblock User"}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => setBlockDialogOpen(true)}>
+                  <Ban className="mr-2 h-4 w-4" />
+                  Block User
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => setReportDialogOpen(true)}>
+                <Flag className="mr-2 h-4 w-4" />
+                Report User
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Profile Header Card */}
@@ -214,19 +273,25 @@ export function UserProfile() {
 
                     {/* Connection Status Badges */}
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {connectionStatus.isConnected && (
+                      {connectionStatus.youBlockedThem && (
+                        <Badge variant="destructive">
+                          <Ban className="w-3 h-3 mr-1" />
+                          Blocked
+                        </Badge>
+                      )}
+                      {!connectionStatus.youBlockedThem && connectionStatus.isConnected && (
                         <Badge variant="default">
                           <Heart className="w-3 h-3 mr-1 fill-current" />
                           Connected
                         </Badge>
                       )}
-                      {!connectionStatus.isConnected && connectionStatus.theyLikedYou && (
+                      {!connectionStatus.youBlockedThem && !connectionStatus.isConnected && connectionStatus.theyLikedYou && (
                         <Badge variant="secondary">
                           <Heart className="w-3 h-3 mr-1" />
                           Liked you
                         </Badge>
                       )}
-                      {!connectionStatus.isConnected && connectionStatus.youLikedThem && (
+                      {!connectionStatus.youBlockedThem && !connectionStatus.isConnected && connectionStatus.youLikedThem && (
                         <Badge variant="outline">
                           <Heart className="w-3 h-3 mr-1" />
                           You liked
@@ -304,30 +369,52 @@ export function UserProfile() {
         )}
 
         {/* Action Buttons */}
-        <Card>
-          <CardContent>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleLikeToggle}
-                disabled={isLiking || isUnliking}
-                className="flex-1"
-                variant={connectionStatus.youLikedThem ? "outline" : "default"}
-              >
-                <Heart
-                  className={`w-4 h-4 mr-2 ${connectionStatus.youLikedThem ? "fill-current" : ""}`}
-                />
-                {isLiking || isUnliking ? "Loading..." : connectionStatus.youLikedThem ? "Unlike" : "Like"}
-              </Button>
-              {connectionStatus.isConnected && (
-                <Button onClick={handleMessage} className="flex-1">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Message
+        {!connectionStatus.youBlockedThem && (
+          <Card>
+            <CardContent>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleLikeToggle}
+                  disabled={isLiking || isUnliking}
+                  className="flex-1"
+                  variant={connectionStatus.youLikedThem ? "outline" : "default"}
+                >
+                  <Heart
+                    className={`w-4 h-4 mr-2 ${connectionStatus.youLikedThem ? "fill-current" : ""}`}
+                  />
+                  {connectionStatus.youLikedThem ? "Unlike" : "Like"}
                 </Button>
-              )}
+                {connectionStatus.isConnected && (
+                  <Button onClick={handleMessage} className="flex-1">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Message
+                  </Button>
+                )}
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
+
+      {/* Block User Dialog */}
+      <BlockUserDialog
+        open={blockDialogOpen}
+        onOpenChange={setBlockDialogOpen}
+        onConfirm={() => userId && blockMutation.mutate(userId)}
+        isPending={blockMutation.isPending}
+        userName={user.firstName}
+      />
+
+      {/* Report User Dialog */}
+      <ReportUserDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        onConfirm={(reason) => userId && reportMutation.mutate({ userId, reason })}
+        isPending={reportMutation.isPending}
+        userName={user.firstName}
+        selectedReason={selectedReportReason}
+        onReasonChange={setSelectedReportReason}
+      />
     </AppLayout>
   );
 }

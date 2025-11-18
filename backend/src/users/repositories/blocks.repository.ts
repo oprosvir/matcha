@@ -49,10 +49,84 @@ export class BlocksRepository {
 
   async getAllBlockedUserIds(userId: string): Promise<string[]> {
     try {
-      // Get users I blocked and users who blocked me
-      const blockedByMe = await this.findAllUsersBlockedByUser(userId);
-      const blockedByOthers = await this.findAllUsersWhoBlockedUser(userId);
-      return [...new Set([...blockedByMe, ...blockedByOthers])];
+      // Get users I blocked and users who blocked me in a single query
+      const result = await this.db.query<{ user_id: string }>(
+        `SELECT blocked_id as user_id FROM blocks WHERE blocker_id = $1
+         UNION
+         SELECT blocker_id as user_id FROM blocks WHERE blocked_id = $1`,
+        [userId]
+      );
+      return result.rows.map(row => row.user_id);
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException(
+        'INTERNAL_SERVER_ERROR',
+        'An unexpected internal server error occurred.',
+        'ERROR_INTERNAL_SERVER',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async blockUser(blockerId: string, blockedId: string): Promise<void> {
+    try {
+      await this.db.query(
+        `INSERT INTO blocks (blocker_id, blocked_id) VALUES ($1, $2) ON CONFLICT (blocker_id, blocked_id) DO NOTHING`,
+        [blockerId, blockedId]
+      );
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException(
+        'INTERNAL_SERVER_ERROR',
+        'An unexpected internal server error occurred.',
+        'ERROR_INTERNAL_SERVER',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async unblockUser(blockerId: string, blockedId: string): Promise<void> {
+    try {
+      await this.db.query(
+        `DELETE FROM blocks WHERE blocker_id = $1 AND blocked_id = $2`,
+        [blockerId, blockedId]
+      );
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException(
+        'INTERNAL_SERVER_ERROR',
+        'An unexpected internal server error occurred.',
+        'ERROR_INTERNAL_SERVER',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async isBlocked(userId1: string, userId2: string): Promise<boolean> {
+    try {
+      const result = await this.db.query<{ exists: boolean }>(
+        `SELECT EXISTS(SELECT 1 FROM blocks WHERE (blocker_id = $1 AND blocked_id = $2) OR (blocker_id = $2 AND blocked_id = $1)) as exists`,
+        [userId1, userId2]
+      );
+      return result.rows[0]?.exists || false;
+    } catch (error) {
+      console.error(error);
+      throw new CustomHttpException(
+        'INTERNAL_SERVER_ERROR',
+        'An unexpected internal server error occurred.',
+        'ERROR_INTERNAL_SERVER',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async hasUserBlockedUser(blockerId: string, blockedId: string): Promise<boolean> {
+    try {
+      const result = await this.db.query<{ exists: boolean }>(
+        `SELECT EXISTS(SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = $2) as exists`,
+        [blockerId, blockedId]
+      );
+      return result.rows[0]?.exists || false;
     } catch (error) {
       console.error(error);
       throw new CustomHttpException(

@@ -4,7 +4,7 @@ import { DatabaseService } from 'src/database/database.service';
 import { CreateUserRequestDto } from '../dto';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import { Gender, SexualOrientation } from '../enums/user.enums';
-import { Sort, SortOrder } from '../dto/get-users/get-users-request.dto';
+import { Sort, SortOrder } from '../dto/get-users/request.dto';
 import { calculateFameRating, FameRatingMetrics } from '../utils/fame-rating.calculator';
 
 export interface UserPhoto {
@@ -644,6 +644,13 @@ export class UsersRepository {
       paramIndex++;
 
       conditions.push(`u.profile_completed = TRUE`);
+
+      // Exclude users who blocked current user (but keep users current user blocked)
+      conditions.push(`u.id NOT IN (
+        SELECT blocker_id FROM blocks WHERE blocked_id = $${paramIndex}
+      )`);
+      params.push(currentUserId);
+      paramIndex++;
 
       // Build filter conditions using shared method
       const filterResult = this.buildFilterConditions(filters, conditions, params, paramIndex);

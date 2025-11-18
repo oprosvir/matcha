@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, UseGuards, HttpStatus, Query, Param } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Delete, UseGuards, HttpStatus, Query, Param } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { CurrentUser } from 'src/auth/current-user.decorators';
@@ -13,15 +13,17 @@ import {
   GetPublicProfileResponseDto
 } from './dto';
 import { PrivateUserDto } from './dto';
-import { FindAllMatchesResponseDto } from './dto/find-all-matches/find-all-matches-response.dto';
-import { FindAllLikesResponseDto } from './dto/find-all-likes/find-all-likes-response.dto';
-import { FindAllLikesSentResponseDto } from './dto/find-all-likes-sent/find-all-likes-sent-response.dto';
-import { LikeUserRequestDto } from './dto/like-user/like-user-request.dto';
+import { FindAllMatchesResponseDto } from './dto/find-all-matches/response.dto';
+import { FindAllLikesResponseDto } from './dto/find-all-likes/response.dto';
+import { FindAllLikesSentResponseDto } from './dto/find-all-likes-sent/response.dto';
 import { CustomHttpException } from 'src/common/exceptions/custom-http.exception';
 import { GetLocationListResponseDto } from './dto/get-location-list/get-location-list.dto';
-import { GetUsersRequestDto } from './dto/get-users/get-users-request.dto';
-import { GetUsersResponseDto } from './dto/get-users/get-users-response.dto';
-import { GetSuggestedUsersRequestDto } from './dto/get-suggested-users/get-suggested-users-request.dto';
+import { GetUsersRequestDto } from './dto/get-users/request.dto';
+import { GetUsersResponseDto } from './dto/get-users/response.dto';
+import { GetSuggestedUsersRequestDto } from './dto/get-suggested-users/request.dto';
+import { BlockUserResponseDto } from './dto/block-user/response.dto';
+import { ReportUserRequestDto } from './dto/report-user/request.dto';
+import { ReportUserResponseDto } from './dto/report-user/response.dto';
 
 @Controller('users')
 export class UserController {
@@ -173,17 +175,66 @@ export class UserController {
     return { success: true, data: result, messageKey: 'SUCCESS_LOCATION_UPDATED' };
   }
 
-  @Post('like')
+  @Post(':userId/likes')
   @UseGuards(AuthGuard)
-  async likeUser(@CurrentUser('sub') userId: string, @Body() likeUserRequestDto: LikeUserRequestDto) {
-    await this.userService.likeUser(userId, likeUserRequestDto.userId);
+  async likeUser(
+    @CurrentUser('sub') currentUserId: string,
+    @Param('userId') targetUserId: string
+  ) {
+    await this.userService.likeUser(currentUserId, targetUserId);
     return { success: true, messageKey: 'SUCCESS_LIKE_USER' };
   }
 
-  @Post('unlike')
+  @Delete(':userId/likes')
   @UseGuards(AuthGuard)
-  async unlikeUser(@CurrentUser('sub') userId: string, @Body() likeUserRequestDto: LikeUserRequestDto) {
-    await this.userService.unLikeUser(userId, likeUserRequestDto.userId);
+  async unlikeUser(
+    @CurrentUser('sub') currentUserId: string,
+    @Param('userId') targetUserId: string
+  ) {
+    await this.userService.unLikeUser(currentUserId, targetUserId);
     return { success: true, messageKey: 'SUCCESS_UNLIKE_USER' };
+  }
+
+  @Post(':userId/block')
+  @UseGuards(AuthGuard)
+  async blockUser(
+    @CurrentUser('sub') currentUserId: string,
+    @Param('userId') blockedUserId: string
+  ): Promise<{ success: boolean, data: BlockUserResponseDto, messageKey: string }> {
+    await this.userService.blockUser(currentUserId, blockedUserId);
+    return {
+      success: true,
+      data: { message: 'User blocked successfully' },
+      messageKey: 'SUCCESS_BLOCK_USER'
+    };
+  }
+
+  @Delete(':userId/block')
+  @UseGuards(AuthGuard)
+  async unblockUser(
+    @CurrentUser('sub') currentUserId: string,
+    @Param('userId') blockedUserId: string
+  ): Promise<{ success: boolean, data: BlockUserResponseDto, messageKey: string }> {
+    await this.userService.unblockUser(currentUserId, blockedUserId);
+    return {
+      success: true,
+      data: { message: 'User unblocked successfully' },
+      messageKey: 'SUCCESS_UNBLOCK_USER'
+    };
+  }
+
+  @Post(':userId/report')
+  @UseGuards(AuthGuard)
+  async reportUser(
+    @CurrentUser('sub') currentUserId: string,
+    @Param('userId') reportedUserId: string,
+    @Body() reportUserDto: ReportUserRequestDto
+  ): Promise<{ success: boolean, data: ReportUserResponseDto, messageKey: string }> {
+    await this.userService.reportUser(currentUserId, reportedUserId, reportUserDto.reason);
+    return {
+      success: true,
+      data: { message: 'User reported successfully' },
+      messageKey: 'SUCCESS_REPORT_USER'
+    };
   }
 }
