@@ -60,15 +60,6 @@ export function formatDateOfBirth(dateOfBirth: string): string {
 }
 
 /**
- * Format member since date
- * @param createdAt - Date when user registered
- * @returns Formatted date string (e.g., "January 2025")
- */
-export function formatMemberSince(createdAt: Date): string {
-  return createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-}
-
-/**
  * Format last seen time in a human-readable format
  * @param lastTimeActive - Last active timestamp or null
  * @returns Formatted string (e.g., "just now", "2h ago", "5d ago")

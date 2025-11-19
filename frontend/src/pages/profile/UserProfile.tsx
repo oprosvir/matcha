@@ -24,21 +24,18 @@ import {
   MapPin,
   Heart,
   MessageCircle,
-  User as UserIcon,
   Clock,
   Award,
   ArrowLeft,
-  Navigation,
-  Calendar,
   Users,
   Search,
   MoreVertical,
   Ban,
   Flag,
 } from "lucide-react";
-import { calculateAge, formatMemberSince, formatLastSeen } from "@/utils/dateUtils";
-import { getPhotoUrl } from "@/utils/photoUtils";
+import { calculateAge, formatLastSeen } from "@/utils/dateUtils";
 import { calculateDistance, formatDistance } from "@/utils/distanceUtils";
+import { PhotoCarousel } from "@/components/PhotoCarousel";
 
 // Helper function to format sexual orientation as "interested in"
 function formatInterestedIn(gender: string | null, sexualOrientation: string | null): string {
@@ -150,7 +147,6 @@ export function UserProfile() {
 
   const { user, connectionStatus, isOnline } = profile;
   const age = user.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
-  const profilePic = user.photos?.find(p => p.isProfilePic);
 
   // Calculate distance from current user
   const distance = currentUser?.latitude && currentUser?.longitude &&
@@ -160,9 +156,9 @@ export function UserProfile() {
 
   return (
     <AppLayout>
-      <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
+      <div className="flex-1 flex flex-col min-h-0 w-full max-w-5xl mx-auto">
         {/* Header with back button and actions */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 flex-shrink-0 mb-4">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
@@ -198,202 +194,160 @@ export function UserProfile() {
           </DropdownMenu>
         </div>
 
-        {/* Profile Header Card */}
-        <Card>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Profile Picture */}
-              <div className="flex-shrink-0 mx-auto md:mx-0">
-                {profilePic ? (
-                  <img
-                    src={getPhotoUrl(profilePic.url)}
-                    alt={`${user.firstName}'s profile`}
-                    className="w-32 h-32 rounded-full object-cover border-2 border-border"
-                  />
-                ) : (
-                  <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-2 border-border">
-                    <UserIcon className="w-16 h-16 text-muted-foreground" />
-                  </div>
-                )}
+        {/* Unified Profile Card with 2-Column Layout */}
+        <Card className="flex-1 flex flex-col min-h-0">
+          <CardContent className="p-0 flex-1 overflow-y-auto md:overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2 md:h-full divide-x">
+              {/* LEFT: Photo Carousel (50%) */}
+              <div className="p-4 flex items-center justify-center md:overflow-hidden">
+                <div className="w-full max-w-md">
+                  <PhotoCarousel photos={user.photos} userName={user.firstName} />
+                </div>
               </div>
 
-              {/* User Info */}
-              <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div>
-                    <h1 className="text-3xl font-bold">
-                      {user.firstName} {user.lastName}
-                      {age && <span className="text-muted-foreground font-normal">, {age}</span>}
-                    </h1>
+              {/* RIGHT: All User Info */}
+              <div className="p-4 md:overflow-y-auto space-y-3 flex flex-col">
+                {/* HEADER: Name & Status */}
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-bold">
+                    {user.firstName} {user.lastName}
+                    {age && <span className="text-muted-foreground font-normal">, {age}</span>}
+                  </h1>
 
-                    {/* Gender, Interested in, Member Since */}
-                    <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-muted-foreground">
-                      {user.gender && (
-                        <div className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          <span className="capitalize">{user.gender}</span>
-                        </div>
-                      )}
-                      {user.sexualOrientation && (
-                        <>
-                          {user.gender && <span>•</span>}
-                          <div className="flex items-center gap-1">
-                            <Search className="w-3 h-3" />
-                            <span>Interested in: {formatInterestedIn(user.gender, user.sexualOrientation)}</span>
-                          </div>
-                        </>
-                      )}
-                      {user.createdAt && (
-                        <>
-                          {(user.gender || user.sexualOrientation) && <span>•</span>}
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>Member since {formatMemberSince(user.createdAt)}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Online Status */}
-                    <div className="flex items-center gap-2 mt-2">
-                      {isOnline ? (
-                        <Badge variant="default" className="bg-green-500">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Online now
-                        </Badge>
+                  {/* Location & Distance - under name */}
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      {user.cityName && user.countryName ? (
+                        <span>{user.cityName}, {user.countryName}</span>
                       ) : (
-                        user.lastTimeActive && (
-                          <Badge variant="secondary">
-                            <Clock className="w-3 h-3 mr-1" />
-                            Last seen {formatLastSeen(user.lastTimeActive)}
-                          </Badge>
-                        )
+                        <span>Location not set</span>
                       )}
                     </div>
-
-                    {/* Connection Status Badges */}
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {connectionStatus.youBlockedThem && (
-                        <Badge variant="destructive">
-                          <Ban className="w-3 h-3 mr-1" />
-                          Blocked
-                        </Badge>
-                      )}
-                      {!connectionStatus.youBlockedThem && connectionStatus.isConnected && (
-                        <Badge variant="default">
-                          <Heart className="w-3 h-3 mr-1 fill-current" />
-                          Connected
-                        </Badge>
-                      )}
-                      {!connectionStatus.youBlockedThem && !connectionStatus.isConnected && connectionStatus.theyLikedYou && (
-                        <Badge variant="secondary">
-                          <Heart className="w-3 h-3 mr-1" />
-                          Liked you
-                        </Badge>
-                      )}
-                      {!connectionStatus.youBlockedThem && !connectionStatus.isConnected && connectionStatus.youLikedThem && (
-                        <Badge variant="outline">
-                          <Heart className="w-3 h-3 mr-1" />
-                          You liked
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Biography */}
-                {user.biography && (
-                  <p className="mt-4 text-sm">{user.biography}</p>
-                )}
-
-                {/* Location, Distance & Fame */}
-                <div className="mt-4 flex flex-wrap gap-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="w-4 h-4" />
-                    {user.cityName && user.countryName ? (
-                      <span>{user.cityName}, {user.countryName}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Location not set</span>
+                    {distance !== null && (
+                      <>
+                        <span>•</span>
+                        <span>{formatDistance(distance)}</span>
+                      </>
                     )}
                   </div>
-                  {distance !== null && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Navigation className="w-4 h-4" />
-                      <span>{formatDistance(distance)}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-sm">
-                    <Award className="w-4 h-4" />
-                    <span>Fame Rating: {user.fameRating}/100</span>
+
+                  {/* Gender, Interested in, Fame rating */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    {user.gender && (
+                      <div className="flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        <span className="capitalize">{user.gender}</span>
+                      </div>
+                    )}
+                    {user.sexualOrientation && (
+                      <>
+                        {user.gender && <span>•</span>}
+                        <div className="flex items-center gap-1">
+                          <Search className="w-3 h-3" />
+                          <span>Interested in: {formatInterestedIn(user.gender, user.sexualOrientation)}</span>
+                        </div>
+                      </>
+                    )}
+                    <>
+                      {(user.gender || user.sexualOrientation) && <span>•</span>}
+                      <div className="flex items-center gap-1">
+                        <Award className="w-3 h-3" />
+                        <span>Fame rating: {user.fameRating}/100</span>
+                      </div>
+                    </>
+                  </div>
+
+                  {/* Status Badges */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {isOnline ? (
+                      <Badge variant="default" className="bg-green-500">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Online now
+                      </Badge>
+                    ) : (
+                      user.lastTimeActive && (
+                        <Badge variant="secondary">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Last seen {formatLastSeen(user.lastTimeActive)}
+                        </Badge>
+                      )
+                    )}
+                    {connectionStatus.youBlockedThem && (
+                      <Badge variant="destructive">
+                        <Ban className="w-3 h-3 mr-1" />
+                        Blocked
+                      </Badge>
+                    )}
+                    {!connectionStatus.youBlockedThem && connectionStatus.isConnected && (
+                      <Badge variant="default">
+                        <Heart className="w-3 h-3 mr-1 fill-current" />
+                        Connected
+                      </Badge>
+                    )}
+                    {!connectionStatus.youBlockedThem && !connectionStatus.isConnected && connectionStatus.theyLikedYou && (
+                      <Badge variant="secondary">
+                        <Heart className="w-3 h-3 mr-1" />
+                        Liked you
+                      </Badge>
+                    )}
+                    {!connectionStatus.youBlockedThem && !connectionStatus.isConnected && connectionStatus.youLikedThem && (
+                      <Badge variant="outline">
+                        <Heart className="w-3 h-3 mr-1" />
+                        You liked
+                      </Badge>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Photos Gallery */}
-        {user.photos && user.photos.length > 0 && (
-          <Card>
-            <CardContent>
-              <h2 className="text-xl font-semibold mb-4">Photos</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {user.photos.map((photo) => (
-                  <div key={photo.id} className="relative aspect-square">
-                    <img
-                      src={getPhotoUrl(photo.url)}
-                      alt="User photo"
-                      className="w-full h-full object-cover rounded-lg"
-                    />
+                {/* BIOGRAPHY Section */}
+                {user.biography && (
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                    <h3 className="text-xs font-semibold uppercase text-muted-foreground">About</h3>
+                    <p className="text-sm leading-relaxed">{user.biography}</p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Interests */}
-        {user.interests && user.interests.length > 0 && (
-          <Card>
-            <CardContent>
-              <h2 className="text-xl font-semibold mb-4">Interests</h2>
-              <div className="flex flex-wrap gap-2">
-                {user.interests.map((interest) => (
-                  <Badge key={interest.id} variant="secondary">
-                    {interest.name}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Action Buttons */}
-        {!connectionStatus.youBlockedThem && (
-          <Card>
-            <CardContent>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleLikeToggle}
-                  disabled={isLiking || isUnliking}
-                  className="flex-1"
-                  variant={connectionStatus.youLikedThem ? "outline" : "default"}
-                >
-                  <Heart
-                    className={`w-4 h-4 mr-2 ${connectionStatus.youLikedThem ? "fill-current" : ""}`}
-                  />
-                  {connectionStatus.youLikedThem ? "Unlike" : "Like"}
-                </Button>
-                {connectionStatus.isConnected && (
-                  <Button onClick={handleMessage} className="flex-1">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Message
-                  </Button>
                 )}
+
+                {/* INTERESTS Section */}
+                {user.interests && user.interests.length > 0 && (
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                    <h3 className="text-xs font-semibold uppercase text-muted-foreground">Interests</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {user.interests.map((interest) => (
+                        <Badge key={interest.id} variant="secondary" className="text-xs">
+                          {interest.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ACTION BUTTONS - Always at bottom */}
+                {!connectionStatus.youBlockedThem && (
+                  <div className="flex gap-2 mt-auto pt-2">
+                    <Button
+                      onClick={handleLikeToggle}
+                      disabled={isLiking || isUnliking}
+                      className="flex-1"
+                      variant={connectionStatus.youLikedThem ? "outline" : "default"}
+                    >
+                      <Heart
+                        className={`w-4 h-4 mr-2 ${connectionStatus.youLikedThem ? "fill-current" : ""}`}
+                      />
+                      {connectionStatus.youLikedThem ? "Unlike" : "Like"}
+                    </Button>
+                    {connectionStatus.isConnected && (
+                      <Button onClick={handleMessage} className="flex-1">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Message
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
-        )}
       </div>
 
       {/* Block User Dialog */}

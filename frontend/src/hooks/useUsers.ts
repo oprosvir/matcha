@@ -11,7 +11,7 @@ export interface Filters {
   tags?: string[];
   firstName?: string;
   sort?: {
-    sortBy: 'age' | 'fameRating' | 'interests';
+    sortBy: 'age' | 'fameRating' | 'interests' | 'distance';
     sortOrder: 'asc' | 'desc';
   };
 }

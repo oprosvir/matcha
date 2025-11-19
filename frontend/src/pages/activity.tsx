@@ -35,7 +35,8 @@ export function Activity() {
     setSearchParams({ tab });
   };
 
-  const handleLikesSubTabChange = (subtab: "received" | "sent") => {
+  const handleLikesSubTabChange = (value: string) => {
+    const subtab = value as "received" | "sent";
     setSearchParams({ tab: "likes", subtab });
   };
 
