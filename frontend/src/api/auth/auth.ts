@@ -44,7 +44,7 @@ export const authApi = {
   },
 
   sendPasswordResetEmail: async (email: string): Promise<void> => {
-    const response = await parseApiResponse(apiClient.post('/auth/send-password-reset-email', email), createApiResponseSchema(SendPasswordResetEmailResponseSchema));
+    const response = await parseApiResponse(apiClient.post('/auth/send-password-reset-email', { email }), createApiResponseSchema(SendPasswordResetEmailResponseSchema));
     if (!response.success) {
       throw new Error(getToastMessage(response.messageKey));
     }
