@@ -21,7 +21,6 @@ export class ChatRepository {
       `, [user1, user2]);
       return result.rows[0];
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -31,7 +30,6 @@ export class ChatRepository {
       const result = await this.db.query<ChatDto>(`SELECT id, user1_id as "user1Id", user2_id as "user2Id", created_at as "createdAt" FROM chats WHERE user1_id = $1 AND user2_id = $2 OR user1_id = $2 AND user2_id = $1`, [user1Id, user2Id]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -53,7 +51,6 @@ export class ChatRepository {
       `, [userId]);
       return result.rows;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -66,7 +63,6 @@ export class ChatRepository {
       }
       return result.rows[0];
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

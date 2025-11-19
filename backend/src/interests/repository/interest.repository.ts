@@ -13,7 +13,6 @@ export class InterestRepository {
       const result = await this.db.query(`SELECT id, name FROM interests`);
       return { interests: result.rows };
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -48,7 +47,7 @@ export class InterestRepository {
 
       const values = interestIds.map((_, i) => `($1, $${i + 2})`).join(', ');
       const insertQuery = `INSERT INTO user_interests (user_id, interest_id) VALUES ${values}`;
-      
+
       if (client) {
         await client.query(insertQuery, [userId, ...interestIds]);
       } else {
@@ -60,7 +59,6 @@ export class InterestRepository {
         throw error;
       }
 
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

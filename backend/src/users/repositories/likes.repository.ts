@@ -26,7 +26,6 @@ export class LikesRepository {
       const result = await this.db.query<LikeSent>(`SELECT to_user_id, created_at FROM likes WHERE from_user_id = $1 ORDER BY created_at DESC`, [userId]);
       return result.rows;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -36,7 +35,6 @@ export class LikesRepository {
       const result = await this.db.query<LikeReceived>(`SELECT from_user_id, created_at FROM likes WHERE to_user_id = $1 ORDER BY created_at DESC`, [userId]);
       return result.rows;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -46,7 +44,6 @@ export class LikesRepository {
       const result = await this.db.query<Like>(`INSERT INTO likes (from_user_id, to_user_id) VALUES ($1, $2) ON CONFLICT (from_user_id, to_user_id) DO NOTHING RETURNING *`, [fromUserId, toUserId]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -56,7 +53,6 @@ export class LikesRepository {
       const result = await this.db.query<{ from_user_id: string, to_user_id: string }>(`SELECT * FROM likes WHERE from_user_id = $1 AND to_user_id = $2`, [fromUserId, toUserId]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -65,7 +61,6 @@ export class LikesRepository {
     try {
       await this.db.query(`DELETE FROM likes WHERE from_user_id = $1 AND to_user_id = $2`, [fromUserId, toUserId]);
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

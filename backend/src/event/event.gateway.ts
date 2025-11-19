@@ -55,7 +55,6 @@ export class EventGateway implements OnModuleInit {
 
   handleConnection(client: Socket) {
     client.join(`user:${client.data.user.sub}`);
-    console.log(`User ${client.data.user.sub} connected`);
   }
 
   @SubscribeMessage('sendMessage')

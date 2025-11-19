@@ -19,7 +19,6 @@ export class BlocksRepository {
       );
       return result.rows.map(row => row.blocked_id);
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected internal server error occurred.',
@@ -37,7 +36,6 @@ export class BlocksRepository {
       );
       return result.rows.map(row => row.blocker_id);
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected internal server error occurred.',
@@ -58,7 +56,6 @@ export class BlocksRepository {
       );
       return result.rows.map(row => row.user_id);
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected internal server error occurred.',
@@ -75,7 +72,6 @@ export class BlocksRepository {
         [blockerId, blockedId]
       );
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected internal server error occurred.',
@@ -92,7 +88,6 @@ export class BlocksRepository {
         [blockerId, blockedId]
       );
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected internal server error occurred.',
@@ -110,7 +105,6 @@ export class BlocksRepository {
       );
       return result.rows[0]?.exists || false;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected internal server error occurred.',
@@ -128,7 +122,6 @@ export class BlocksRepository {
       );
       return result.rows[0]?.exists || false;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected internal server error occurred.',

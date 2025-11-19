@@ -274,7 +274,6 @@ export class UserService {
         hasMore,
       };
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -394,13 +393,10 @@ export class UserService {
         tags: getSuggestedUsersRequestDto.tags,
         firstName: getSuggestedUsersRequestDto.firstName,
       };
-      console.log("filters: ", filters);
 
       // We can do that locally because we have a small number of users (500) so it's fine.
       const users = await this.usersRepository.getAllUsers();
       const topMatches = this.getTopMatches(users, currentUser, SUGGESTED_USERS_LIMIT * 2); // Get more to account for filtering
-
-      console.log(topMatches);
 
       const filteredTopMatches = topMatches.filter(u => {
         // Exclude already liked users
@@ -470,7 +466,6 @@ export class UserService {
         return true;
       }).slice(0, SUGGESTED_USERS_LIMIT); // Limit to SUGGESTED_USERS_LIMIT after all filtering
 
-      console.log("filteredTopMatches: ", filteredTopMatches);
       const userListItems = filteredTopMatches.map(user => {
         // Calculate distance for sorting purposes
         let distance: number | undefined;
@@ -485,7 +480,6 @@ export class UserService {
         hasMore: filteredTopMatches.length > SUGGESTED_USERS_LIMIT,
       };
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -496,7 +490,6 @@ export class UserService {
         `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1`
       );
       if (!response.ok) {
-        console.error(response);
         throw new CustomHttpException(
           'FAILED_TO_RESOLVE_LOCATION',
           `Failed to resolve location for latitude: ${latitude} and longitude: ${longitude}`,
@@ -507,7 +500,6 @@ export class UserService {
       const data = await response.json();
       const validatedData = NominatimResponseSchema.safeParse(data);
       if (!validatedData.success || !validatedData.data.address.country) {
-        console.error(validatedData);
         throw new CustomHttpException(
           'FAILED_TO_RESOLVE_LOCATION',
           `Failed to resolve location for latitude: ${latitude} and longitude: ${longitude}`,
@@ -523,7 +515,6 @@ export class UserService {
         address.municipality ||
         address.suburb;
       if (!cityName) {
-        console.error('No city name found in address:', address);
         throw new CustomHttpException(
           'FAILED_TO_RESOLVE_LOCATION',
           `Failed to resolve city name for latitude: ${latitude} and longitude: ${longitude}`,
@@ -532,7 +523,6 @@ export class UserService {
         );
       }
       if (!address.country) {
-        console.error('No country name found in address:', address);
         throw new CustomHttpException(
           'FAILED_TO_RESOLVE_LOCATION',
           `Failed to resolve country name for latitude: ${latitude} and longitude: ${longitude}`,
@@ -542,7 +532,6 @@ export class UserService {
       }
       return { cityName, countryName: address.country };
     } catch (error) {
-      console.error(error);
       if (error instanceof CustomHttpException) {
         throw error;
       }
@@ -556,7 +545,6 @@ export class UserService {
         `https://nominatim.openstreetmap.org/search?city=${cityName}&country=${countryName}&format=json&limit=1`
       );
       if (!response.ok) {
-        console.error(response);
         throw new CustomHttpException(
           'FAILED_TO_RESOLVE_LOCATION',
           `Failed to resolve location for city: ${cityName} and country: ${countryName}`,
@@ -576,7 +564,6 @@ export class UserService {
       }
       return { longitude: parseFloat(validatedData.data[0].lon), latitude: parseFloat(validatedData.data[0].lat) };
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -585,13 +572,11 @@ export class UserService {
     try {
       const response = await fetch(`http://ip-api.com/json/${ipAddress}`);
       if (!response.ok) {
-        console.error(response);
         throw new CustomHttpException('FAILED_TO_RESOLVE_LOCATION', `Failed to resolve location for IP address: ${ipAddress}`, 'ERROR_FAILED_TO_RESOLVE_LOCATION', HttpStatus.BAD_REQUEST);
       }
       const data = await response.json();
       const validatedData = IPAPIResponseSchema.safeParse(data);
       if (!validatedData.success) {
-        console.error('Failed to parse IP-API response:', validatedData.error);
         throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
       }
       if (validatedData.data.status === 'fail') {
@@ -602,7 +587,6 @@ export class UserService {
       }
       return { longitude: validatedData.data.lon, latitude: validatedData.data.lat };
     } catch (error) {
-      console.error(error);
       throw error;
     }
   }
@@ -758,7 +742,6 @@ export class UserService {
     try {
       await this.redisRepository.incrementEntry(`location:${cityName}, ${countryName}`);
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -767,7 +750,6 @@ export class UserService {
     try {
       await this.redisRepository.decrementEntry(`location:${cityName}, ${countryName}`);
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -782,7 +764,7 @@ export class UserService {
       try {
         await this.decrementLocationList(oldUser.city_name, oldUser.country_name);
       } catch (error) {
-        console.error('Failed to decrement old location counter in Redis:', error);
+        // Silently fail - location counter update is not critical
       }
     }
 
@@ -797,7 +779,7 @@ export class UserService {
     try {
       await this.incrementLocationList(location.cityName, location.countryName);
     } catch (error) {
-      console.error('Failed to increment new location counter in Redis:', error);
+      // Silently fail - location counter update is not critical
     }
 
     return { user: this.mapUserToPrivateUserDto(updatedUser) };
@@ -872,13 +854,13 @@ export class UserService {
     try {
       await this.incrementLocationList(location.cityName, location.countryName);
     } catch (error) {
-      console.error('Failed to increment location counter in Redis:', error);
+      // Silently fail - location counter update is not critical
     }
 
     try {
       await this.usersRepository.updateFameRating(userId);
     } catch (error) {
-      console.error('Failed to update fame rating after profile completion:', error);
+      // Silently fail - fame rating update is not critical
     }
 
     return { user: this.mapUserToPrivateUserDto(user) };
@@ -1044,7 +1026,7 @@ export class UserService {
           this.usersRepository.updateFameRating(toUserId),
         ]);
       } catch (error) {
-        console.error('Failed to update fame rating after match:', error);
+        // Silently fail - fame rating update is not critical
       }
     } else { // Like notification
       await this.notificationService.createNotification({ userId: toUserId, type: NotificationType.LIKE, sourceUserId: fromUserId });
@@ -1052,7 +1034,7 @@ export class UserService {
       try {
         await this.usersRepository.updateFameRating(toUserId);
       } catch (error) {
-        console.error('Failed to update fame rating after like:', error);
+        // Silently fail - fame rating update is not critical
       }
     }
   }
@@ -1072,7 +1054,7 @@ export class UserService {
     try {
       await this.usersRepository.updateFameRating(toUserId);
     } catch (error) {
-      console.error('Failed to update fame rating after unlike:', error);
+      // Silently fail - fame rating update is not critical
     }
   }
 
@@ -1173,7 +1155,7 @@ export class UserService {
           sourceUserId: blockerId
         });
       } catch (error) {
-        console.error('Failed to send unlike notification:', error);
+        // Silently fail - notification is not critical
       }
     }
   }

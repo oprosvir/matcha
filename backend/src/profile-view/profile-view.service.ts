@@ -33,7 +33,7 @@ export class ProfileViewService {
     try {
       await this.userRepository.updateFameRating(createProfileViewRequestDto.userId);
     } catch (error) {
-      console.error('Failed to update fame rating after profile view:', error);
+      // Silently fail - fame rating update is not critical
     }
   }
 

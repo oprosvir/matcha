@@ -13,7 +13,7 @@ export interface Photo {
 
 @Injectable()
 export class PhotosRepository {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly db: DatabaseService) { }
 
   /**
    * Create a new photo record in the database
@@ -58,7 +58,6 @@ export class PhotosRepository {
           HttpStatus.CONFLICT,
         );
       }
-      console.error('Error creating photo:', error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected error occurred while creating photo',
@@ -82,7 +81,6 @@ export class PhotosRepository {
       const result = await this.db.query<Photo>(query, [photoId]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error('Error getting photo by ID:', error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected error occurred while fetching photo',
@@ -107,7 +105,6 @@ export class PhotosRepository {
       const result = await this.db.query<Photo>(query, [userId]);
       return result.rows;
     } catch (error) {
-      console.error('Error getting user photos:', error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected error occurred while fetching photos',
@@ -131,7 +128,6 @@ export class PhotosRepository {
       const result = await this.db.query<{ count: string }>(query, [userId]);
       return parseInt(result.rows[0]?.count || '0', 10);
     } catch (error) {
-      console.error('Error getting user photo count:', error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected error occurred while counting photos',
@@ -168,7 +164,6 @@ export class PhotosRepository {
       if (error instanceof CustomHttpException) {
         throw error;
       }
-      console.error('Error deleting photo:', error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected error occurred while deleting photo',
@@ -222,7 +217,6 @@ export class PhotosRepository {
       if (error instanceof CustomHttpException) {
         throw error;
       }
-      console.error('Error setting profile picture:', error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected error occurred while setting profile picture',
@@ -246,7 +240,6 @@ export class PhotosRepository {
       const result = await this.db.query<Photo>(query, [userId]);
       return result.rows;
     } catch (error) {
-      console.error('Error deleting all user photos:', error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected error occurred while deleting photos',
@@ -271,7 +264,6 @@ export class PhotosRepository {
       const result = await this.db.query<Photo>(query, [userId]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error('Error getting profile picture:', error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected error occurred while fetching profile picture',

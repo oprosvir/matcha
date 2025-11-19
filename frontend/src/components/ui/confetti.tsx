@@ -133,9 +133,7 @@ const ConfettiButtonComponent = ({
           y: y / window.innerHeight,
         },
       })
-    } catch (error) {
-      console.error("Confetti button error:", error)
-    }
+    } catch (error) {}
   }
 
   return (

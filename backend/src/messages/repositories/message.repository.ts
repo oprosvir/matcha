@@ -24,7 +24,6 @@ export class MessagesRepository {
       `, [createMessageRequestDto.chatId, createMessageRequestDto.senderId, createMessageRequestDto.content]);
       return { message: result.rows[0] };
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -44,7 +43,6 @@ export class MessagesRepository {
       `, [chatId]);
       return { messages: result.rows };
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -64,7 +62,6 @@ export class MessagesRepository {
       );
       return parseInt(result.rows[0]?.count ?? '0', 10);
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -87,7 +84,6 @@ export class MessagesRepository {
         params
       );
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

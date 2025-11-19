@@ -51,7 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authApi.signOut();
     } catch (error) {
-      console.error("Sign out error:", error);
     } finally {
       tokenManager.clearToken();
       setIsAuthenticated(false);

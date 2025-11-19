@@ -101,7 +101,6 @@ export class UsersRepository {
       const result = await this.db.query<{ count: number }>(query, [currentUserId, otherUserId]);
       return result.rows[0]?.count || 0;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -285,7 +284,6 @@ export class UsersRepository {
       const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.id = $1 GROUP BY u.id`, [id]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -295,7 +293,6 @@ export class UsersRepository {
       const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.username = $1 GROUP BY u.id`, [username]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -305,7 +302,6 @@ export class UsersRepository {
       const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.email = $1 GROUP BY u.id`, [email]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -315,7 +311,6 @@ export class UsersRepository {
       const result = await this.db.query<User>(`${USER_BASE_QUERY} WHERE u.email = $1 OR u.username = $2 GROUP BY u.id`, [email, username]);
       return result.rows[0] || null;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -334,7 +329,6 @@ export class UsersRepository {
 
       return result.rows[0];
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -344,7 +338,6 @@ export class UsersRepository {
       const query = 'UPDATE users SET password_hash = $1 WHERE id = $2';
       await this.db.query(query, [passwordHash, userId]);
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -354,7 +347,6 @@ export class UsersRepository {
       const query = 'UPDATE users SET is_email_verified = $1 WHERE id = $2';
       await this.db.query(query, [isEmailVerified, userId]);
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -412,8 +404,6 @@ export class UsersRepository {
       if (error instanceof CustomHttpException) {
         throw error;
       }
-
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -465,7 +455,6 @@ export class UsersRepository {
         throw error;
       }
 
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -543,7 +532,6 @@ export class UsersRepository {
         throw error;
       }
 
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -553,7 +541,6 @@ export class UsersRepository {
       const result = await this.db.query<{ password_hash: string }>(`SELECT password_hash FROM users WHERE username = $1`, [username]);
       return result.rows[0]?.password_hash || null;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -583,7 +570,6 @@ export class UsersRepository {
         profilePicture: row.profile_picture,
       }));
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -593,7 +579,6 @@ export class UsersRepository {
       const result = await this.db.query<{ city_name: string }>(`SELECT city_name FROM users WHERE id = $1`, [userId]);
       return result.rows[0]?.city_name || null;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -603,7 +588,6 @@ export class UsersRepository {
       const result = await this.db.query<{ country_name: string }>(`SELECT country_name FROM users WHERE id = $1`, [userId]);
       return result.rows[0]?.country_name || null;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -613,7 +597,6 @@ export class UsersRepository {
       const result = await this.db.query<User>(`${USER_BASE_QUERY} GROUP BY u.id`);
       return result.rows;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -754,7 +737,6 @@ export class UsersRepository {
       const result = await this.db.query<User>(query, params);
       return result.rows;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -766,7 +748,6 @@ export class UsersRepository {
         [userId]
       );
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -831,7 +812,6 @@ export class UsersRepository {
       if (error instanceof CustomHttpException) {
         throw error;
       }
-      console.error(error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected internal server error occurred.',
@@ -858,7 +838,6 @@ export class UsersRepository {
       if (error instanceof CustomHttpException) {
         throw error;
       }
-      console.error(error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected internal server error occurred.',

@@ -28,7 +28,7 @@ export interface CropData {
 
 @Injectable()
 export class PhotosService {
-  constructor(private readonly photosRepository: PhotosRepository) {}
+  constructor(private readonly photosRepository: PhotosRepository) { }
 
   /**
    * Upload a single photo for a user
@@ -80,9 +80,6 @@ export class PhotosService {
       if (error instanceof CustomHttpException) {
         throw error;
       }
-
-      // Log unknown errors
-      console.error('Error uploading photo:', error);
 
       // Wrap unknown errors
       throw new CustomHttpException(
@@ -307,8 +304,7 @@ export class PhotosService {
       const filePath = path.join(process.cwd(), url);
       await fs.unlink(filePath);
     } catch (error) {
-      // Log error but don't throw - database record is already deleted
-      console.error(`Failed to delete file from disk: ${url}`, error);
+      // Silently fail - database record is already deleted
     }
   }
 
@@ -328,7 +324,7 @@ export class PhotosService {
     try {
       await fs.rmdir(userUploadDir);
     } catch (error) {
-      console.error(`Failed to delete user upload directory: ${userUploadDir}`, error);
+      // Silently fail - directory may not exist or may not be empty
     }
   }
 }

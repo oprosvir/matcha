@@ -21,7 +21,6 @@ export class EventService {
   }
 
   async handlePingEvent(userId: string): Promise<void> {
-    console.log('handlePingEvent', userId);
     await this.usersRepository.updateLastTimeActive(userId);
   }
 }

@@ -103,7 +103,6 @@ export class AuthService {
         html: `<p>Click <a href="${this.FRONTEND_URL}/auth/reset-password?token=${resetToken}">here</a> to reset your password.</p>`
       });
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred please try again later', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return;
@@ -145,7 +144,6 @@ export class AuthService {
         html: `<p>Click <a href="${this.FRONTEND_URL}/auth/verify-email?token=${verifyEmailToken}">here</a> to verify your email.</p>`
       });
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred please try again later', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return;

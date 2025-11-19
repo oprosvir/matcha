@@ -23,7 +23,6 @@ export class NotificationRepository {
       const result = await this.db.query<CreateNotificationResponseDto>(`INSERT INTO notifications (user_id, type, source_user_id) VALUES ($1, $2, $3) RETURNING id, user_id as "userId", type as "type", source_user_id as "sourceUserId", read as "isRead", created_at as "createdAt"`, [createNotificationRequestDto.userId, createNotificationRequestDto.type, createNotificationRequestDto.sourceUserId]);
       return result.rows[0];
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -33,7 +32,6 @@ export class NotificationRepository {
       const result = await this.db.query<Notification>(`SELECT id, user_id, type, source_user_id, read, created_at FROM notifications WHERE user_id = $1 AND read = FALSE`, [userId]);
       return result.rows;
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -45,7 +43,6 @@ export class NotificationRepository {
         [userId, notificationIds]
       );
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

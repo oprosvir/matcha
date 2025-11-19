@@ -4,7 +4,6 @@ export async function parseApiResponse<T>(promise: Promise<any>, schema: z.ZodSc
   const raw = await promise;
   const result = schema.safeParse(raw);
   if (!result.success) {
-    console.error('ERROR: ', result.error);
     throw new Error("Failed to handle the service response. Please try again later.");
   }
   return result.data;

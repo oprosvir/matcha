@@ -13,7 +13,6 @@ export const tokenManager = {
       const payload = JSON.parse(atob(token.split('.')[1]));
       tokenExpiry = payload.exp * 1000;
     } catch (error) {
-      console.error('Failed to decode token:', error);
       tokenExpiry = Date.now() + 15 * 60 * 1000;
     }
   },

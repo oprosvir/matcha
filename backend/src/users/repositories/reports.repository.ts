@@ -24,7 +24,6 @@ export class ReportsRepository {
         [reporterId, reportedId, reason]
       );
     } catch (error) {
-      console.error(error);
       throw new CustomHttpException(
         'INTERNAL_SERVER_ERROR',
         'An unexpected internal server error occurred.',
