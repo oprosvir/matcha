@@ -8,6 +8,7 @@ import { CompleteProfile } from "@/components/complete-profile";
 import { AppLayout } from "@/components/layouts/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ErrorFallback } from "@/components/ErrorFallback";
 import { calculateAge } from "@/utils/dateUtils";
 import {
@@ -137,12 +138,9 @@ export function Dashboard() {
                       <h3 className="text-xs font-semibold uppercase text-muted-foreground">Interests</h3>
                       <div className="flex flex-wrap gap-1.5">
                         {user.interests.map((interest) => (
-                          <span
-                            key={interest.id}
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted border border-muted text-foreground transition-all hover:bg-secondary hover:border-secondary"
-                          >
+                          <Badge key={interest.id} variant="outline" className="text-xs rounded-full bg-muted border-muted text-foreground transition-all hover:bg-secondary hover:border-secondary dark:bg-[oklch(0.280_0.020_132)] dark:text-[oklch(0.830_0.084_116)] dark:border-[oklch(0.280_0.020_132)] dark:hover:bg-[oklch(0.320_0.030_132)] dark:hover:text-[oklch(0.95_0.008_136)] dark:hover:border-[oklch(0.320_0.030_132)]">
                             {interest.name}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     </div>
