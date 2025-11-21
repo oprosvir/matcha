@@ -37,13 +37,17 @@ export function PhotoCarousel({ photos, userName }: PhotoCarouselProps) {
     });
   }, [photos]);
 
-  // Update current slide info
+  // Update count when photos change
+  React.useEffect(() => {
+    setCount(sortedPhotos.length);
+  }, [sortedPhotos]);
+
+  // Update current slide info when api is available
   React.useEffect(() => {
     if (!api) {
       return;
     }
 
-    setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap());
 
     api.on("select", () => {
