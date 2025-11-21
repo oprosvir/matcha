@@ -8,6 +8,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface BlockUserDialogProps {
   open: boolean;
@@ -45,7 +47,7 @@ export function BlockUserDialog({
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isPending}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className={cn(buttonVariants({ variant: "destructive" }))}
           >
             {isPending ? "Blocking..." : "Block User"}
           </AlertDialogAction>

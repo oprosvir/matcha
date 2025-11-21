@@ -89,9 +89,13 @@ export function Signup() {
     <form className="p-6 md:p-8" onSubmit={handleSubmit}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-2xl font-bold">Create your account</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">
+            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+              Create your account
+            </span>
+          </h1>
           <p className="text-muted-foreground text-sm text-balance">
-            Enter your email below to create your account
+            Enter your information below to get started
           </p>
         </div>
         <Field>
@@ -186,7 +190,10 @@ export function Signup() {
           Create Account
         </Button>
         <FieldDescription className="text-center">
-          Already have an account? <a href="/auth/sign-in">Sign in</a>
+          Already have an account?{" "}
+          <a href="/auth/sign-in" className="text-primary hover:text-primary/80 font-medium underline-offset-4 hover:underline">
+            Sign in
+          </a>
         </FieldDescription>
       </FieldGroup>
     </form>

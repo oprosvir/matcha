@@ -4,9 +4,10 @@ import { ChatRepository } from './repositories/chat.repository';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { UserModule } from '../users/user.module';
+import { MessagesModule } from '../messages/message.module';
 
 @Module({
-  imports: [DatabaseModule, forwardRef(() => UserModule)],
+  imports: [DatabaseModule, forwardRef(() => UserModule), forwardRef(() => MessagesModule)],
   controllers: [ChatController],
   providers: [ChatService, ChatRepository],
   exports: [ChatRepository, ChatService],

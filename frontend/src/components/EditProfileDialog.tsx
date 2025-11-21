@@ -94,7 +94,7 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Fame Rating:</span>
-                        <span className="font-medium">{user.fameRating}/100</span>
+                        <span className="font-medium">{user.fameRating}</span>
                       </div>
                     </div>
                   </CardContent>

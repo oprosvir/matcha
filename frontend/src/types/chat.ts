@@ -18,6 +18,7 @@ export const ConversationSchema = z.object({
   chatId: z.string(),
   profilePreview: ProfilePreviewSchema,
   createdAt: z.string().transform((str) => new Date(str)),
+  unreadCount: z.number(),
 });
 export type Conversation = z.infer<typeof ConversationSchema>;
 

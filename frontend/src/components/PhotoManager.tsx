@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Button } from './ui/button';
+import { Button, buttonVariants } from './ui/button';
 import { Camera, XIcon, Star } from 'lucide-react';
 import { useUserPhotos, useUploadPhoto, useDeletePhoto, useSetProfilePicture, type Photo } from '@/hooks/usePhotos';
 import { Skeleton } from './ui/skeleton';
@@ -16,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 interface PhotoSlotProps {
   photo?: Photo;
@@ -289,7 +290,7 @@ export function PhotoManager() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={confirmDelete} className={cn(buttonVariants({ variant: "destructive" }))}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

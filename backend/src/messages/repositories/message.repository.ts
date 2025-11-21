@@ -87,4 +87,32 @@ export class MessagesRepository {
       throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async countUnreadMessagesPerChat(userId: string, chatIds: string[]): Promise<Map<string, number>> {
+    if (!chatIds || chatIds.length === 0) return new Map();
+    try {
+      const params = [userId, ...chatIds];
+      const idsPlaceholders = chatIds.map((_, idx) => `$${idx + 2}`).join(',');
+      const result = await this.db.query<{ chatId: string; count: string }>(
+        `
+        SELECT
+          m.chat_id as "chatId",
+          COUNT(m.id) AS count
+        FROM messages m
+        WHERE m.chat_id IN (${idsPlaceholders})
+          AND m.sender_id <> $1
+          AND (m.read IS NOT TRUE)
+        GROUP BY m.chat_id
+        `,
+        params
+      );
+      const map = new Map<string, number>();
+      for (const row of result.rows) {
+        map.set(row.chatId, parseInt(row.count, 10));
+      }
+      return map;
+    } catch (error) {
+      throw new CustomHttpException('INTERNAL_SERVER_ERROR', 'An unexpected internal server error occurred.', 'ERROR_INTERNAL_SERVER', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

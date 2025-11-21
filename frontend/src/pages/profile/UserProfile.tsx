@@ -24,11 +24,7 @@ import {
   MapPin,
   Heart,
   MessageCircle,
-  Clock,
-  Award,
   ArrowLeft,
-  Users,
-  Search,
   MoreVertical,
   Ban,
   Flag,
@@ -36,6 +32,12 @@ import {
 import { calculateAge, formatLastSeen } from "@/utils/dateUtils";
 import { calculateDistance, formatDistance } from "@/utils/distanceUtils";
 import { PhotoCarousel } from "@/components/PhotoCarousel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Helper function to format sexual orientation as "interested in"
 function formatInterestedIn(gender: string | null, sexualOrientation: string | null): string {
@@ -235,42 +237,49 @@ export function UserProfile() {
                   {/* Gender, Interested in, Fame rating */}
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     {user.gender && (
-                      <div className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        <span className="capitalize">{user.gender}</span>
-                      </div>
+                      <span className="capitalize">{user.gender}</span>
                     )}
                     {user.sexualOrientation && (
                       <>
                         {user.gender && <span>•</span>}
-                        <div className="flex items-center gap-1">
-                          <Search className="w-3 h-3" />
-                          <span>Interested in: {formatInterestedIn(user.gender, user.sexualOrientation)}</span>
-                        </div>
+                        <span>Interested in: {formatInterestedIn(user.gender, user.sexualOrientation)}</span>
                       </>
                     )}
                     <>
                       {(user.gender || user.sexualOrientation) && <span>•</span>}
-                      <div className="flex items-center gap-1">
-                        <Award className="w-3 h-3" />
-                        <span>Fame rating: {user.fameRating}/100</span>
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help">
+                              Fame rating: {user.fameRating}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Fame rating reflects profile activity and popularity.
+                              Higher ratings come from profile completeness, likes, views, and matches.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </>
                   </div>
 
                   {/* Status Badges */}
                   <div className="flex flex-wrap items-center gap-1.5">
                     {isOnline ? (
-                      <Badge variant="default" className="bg-green-500">
-                        <Clock className="w-3 h-3 mr-1" />
-                        Online now
-                      </Badge>
+                      <div className="inline-flex items-center gap-2 text-sm text-primary dark:text-accent">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#A3B326] opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-[#A3B326]"></span>
+                        </span>
+                        Online
+                      </div>
                     ) : (
                       user.lastTimeActive && (
-                        <Badge variant="secondary">
-                          <Clock className="w-3 h-3 mr-1" />
+                        <div className="text-sm opacity-70">
                           Last seen {formatLastSeen(user.lastTimeActive)}
-                        </Badge>
+                        </div>
                       )
                     )}
                     {connectionStatus.youBlockedThem && (
@@ -314,7 +323,7 @@ export function UserProfile() {
                     <h3 className="text-xs font-semibold uppercase text-muted-foreground">Interests</h3>
                     <div className="flex flex-wrap gap-1.5">
                       {user.interests.map((interest) => (
-                        <Badge key={interest.id} variant="secondary" className="text-xs">
+                        <Badge key={interest.id} variant="outline" className="text-xs rounded-full bg-muted border-muted text-foreground transition-all hover:bg-secondary hover:border-secondary dark:bg-[oklch(0.280_0.020_132)] dark:text-[oklch(0.830_0.084_116)] dark:border-[oklch(0.280_0.020_132)] dark:hover:bg-[oklch(0.320_0.030_132)] dark:hover:text-[oklch(0.95_0.008_136)] dark:hover:border-[oklch(0.320_0.030_132)]">
                           {interest.name}
                         </Badge>
                       ))}

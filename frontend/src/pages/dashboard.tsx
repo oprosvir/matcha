@@ -1,25 +1,35 @@
 import { useState } from "react";
 import { useCurrentUser } from "@/hooks/useUserProfile";
+import { useAllMatches } from "@/hooks/useAllMatches";
+import { useLikes } from "@/hooks/useLikes";
+import { useProfileViews } from "@/hooks/useProfileViews";
 import { Spinner } from "@/components/ui/spinner";
 import { CompleteProfile } from "@/components/complete-profile";
 import { AppLayout } from "@/components/layouts/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { ErrorFallback } from "@/components/ErrorFallback";
 import { calculateAge } from "@/utils/dateUtils";
 import {
-  User as UserIcon,
-  Search,
-  Activity,
-  MessageCircle,
   MapPin,
+  Heart,
+  Eye,
+  Users,
 } from "lucide-react";
-import { getPhotoUrl } from "@/utils/photoUtils";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { PhotoCarousel } from "@/components/PhotoCarousel";
 
 export function Dashboard() {
   const { data: user, isLoading } = useCurrentUser();
+  const { data: matches } = useAllMatches();
+  const { data: likes } = useLikes();
+  const { data: profileViews } = useProfileViews();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Loading state
@@ -37,10 +47,7 @@ export function Dashboard() {
   }
 
   // Profile completed - show dashboard with AppLayout
-  // TODO: make user photo not optional
   if (user && user.profileCompleted) {
-    const profilePic = user.photos?.find((p) => p.isProfilePic);
-
     return (
       <AppLayout>
         <div className="max-w-5xl mx-auto flex flex-col gap-6">
@@ -57,45 +64,36 @@ export function Dashboard() {
           <Card>
             <CardContent>
               <div className="flex flex-col md:flex-row gap-6">
-                {/* Avatar */}
-                <div className="flex-shrink-0 mx-auto md:mx-0">
-                  {profilePic ? (
-                    <img
-                      src={getPhotoUrl(profilePic.url)}
-                      alt={`${user.firstName}'s profile`}
-                      className="w-32 h-32 rounded-full object-cover border-2 border-border"
-                    />
-                  ) : (
-                    <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-2 border-border">
-                      <UserIcon className="w-16 h-16 text-muted-foreground" />
-                    </div>
-                  )}
+                {/* Photo Carousel */}
+                <div className="flex-shrink-0 mx-auto md:mx-0 w-48 h-48">
+                  <PhotoCarousel photos={user.photos} userName={user.firstName} />
                 </div>
 
                 {/* User Info */}
                 <div className="flex-1">
                   <div className="text-center md:text-left">
-                    <h2 className="text-2xl font-bold">
-                      {user.firstName} {user.lastName}
-                      {user.dateOfBirth && (
-                        <span className="text-muted-foreground font-normal">
-                          , {calculateAge(user.dateOfBirth)}
-                        </span>
-                      )}
-                    </h2>
-                    <p className="text-muted-foreground text-sm mb-3">
-                      @{user.username}
-                    </p>
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 mb-3">
+                      <div>
+                        <h2 className="text-2xl font-bold">
+                          {user.firstName} {user.lastName}
+                          {user.dateOfBirth && (
+                            <span className="text-muted-foreground font-normal">
+                              , {calculateAge(user.dateOfBirth)}
+                            </span>
+                          )}
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                          @{user.username}
+                        </p>
+                      </div>
+                      <Button variant="outline" className="w-full md:w-auto" onClick={() => setIsEditDialogOpen(true)}>
+                        Edit Profile
+                      </Button>
+                    </div>
                   </div>
 
-                  {user.biography && (
-                    <p className="text-sm mb-4 line-clamp-2">
-                      {user.biography}
-                    </p>
-                  )}
-
                   {/* Location */}
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-sm mb-2">
                     <MapPin className="w-4 h-4" />
                     {user.cityName && user.countryName ? (
                       <span>{user.cityName}, {user.countryName}</span>
@@ -107,66 +105,104 @@ export function Dashboard() {
                   </div>
 
                   {/* Fame Rating */}
-                  <div className="mt-2 text-sm">
+                  <div className="text-sm mb-4">
                     <span className="text-muted-foreground">Fame Rating: </span>
-                    <span className="font-medium">{user.fameRating}/100</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="font-medium cursor-help">
+                            {user.fameRating}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">
+                            Fame rating reflects profile activity and popularity.
+                            Higher ratings come from profile completeness, likes, views, and matches.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex md:flex-col gap-2 justify-center md:justify-start">
-                  <Button variant="outline" className="md:w-auto" onClick={() => setIsEditDialogOpen(true)}>
-                    Edit Profile
-                  </Button>
+                  {user.biography && (
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-2 mb-4">
+                      <h3 className="text-xs font-semibold uppercase text-muted-foreground">About</h3>
+                      <p className="text-sm leading-relaxed">{user.biography}</p>
+                    </div>
+                  )}
+
+                  {/* Interests */}
+                  {user.interests && user.interests.length > 0 && (
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-2 mt-4">
+                      <h3 className="text-xs font-semibold uppercase text-muted-foreground">Interests</h3>
+                      <div className="flex flex-wrap gap-1.5">
+                        {user.interests.map((interest) => (
+                          <span
+                            key={interest.id}
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted border border-muted text-foreground transition-all hover:bg-secondary hover:border-secondary"
+                          >
+                            {interest.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Quick Actions Grid - Hidden on mobile */}
-          <div className="hidden md:grid gap-4 md:grid-cols-3">
-            {/* Browse Profiles */}
+          {/* Statistics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
-              <CardContent className="flex flex-col h-full">
-                <Search className="w-10 h-10 mb-3 text-primary" />
-                <h3 className="font-semibold mb-2">Browse Profiles</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Discover people near you with similar interests
-                </p>
-                <Button asChild className="w-full mt-auto">
-                  <Link to="/browse">Browse</Link>
-                </Button>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-pink-100 dark:bg-pink-900/30 rounded-full">
+                    <Heart className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Likes Received</p>
+                    <p className="text-2xl font-bold">
+                      {likes?.length ?? 0}
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Activity History */}
             <Card>
-              <CardContent className="flex flex-col h-full">
-                <Activity className="w-10 h-10 mb-3 text-primary" />
-                <h3 className="font-semibold mb-2">Activity</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  See who liked you, matched with you, and viewed your profile
-                </p>
-                <Button asChild className="w-full mt-auto">
-                  <Link to="/activity">View Activity</Link>
-                </Button>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                    <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Matches</p>
+                    <p className="text-2xl font-bold">
+                      {matches?.length ?? 0}
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Messages */}
             <Card>
-              <CardContent className="flex flex-col h-full">
-                <MessageCircle className="w-10 h-10 mb-3 text-primary" />
-                <h3 className="font-semibold mb-2">Messages</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Chat with your matches and connections
-                </p>
-                <Button asChild className="w-full mt-auto">
-                  <Link to="/chat">Chat</Link>
-                </Button>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                    <Eye className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Profile Views</p>
+                    <p className="text-2xl font-bold">
+                      {profileViews?.length ?? 0}
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
+
         </div>
 
         {/* Edit Profile Dialog */}

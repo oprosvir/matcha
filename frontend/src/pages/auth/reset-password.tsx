@@ -58,12 +58,20 @@ export function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 p-6">
-        <h1 className="text-2xl font-bold text-red-600">Invalid Reset Link</h1>
-        <p className="text-muted-foreground text-center">
+      <div className="flex flex-col items-center justify-center h-full gap-4 p-6 md:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-destructive">
+          Invalid Reset Link
+        </h1>
+        <p className="text-muted-foreground text-center text-sm text-balance">
           No reset token was provided. Please check your email and click the
           reset link.
         </p>
+        <a
+          href="/auth/forgot-password"
+          className="text-primary hover:text-primary/80 font-medium underline-offset-4 hover:underline text-sm"
+        >
+          Request a new reset link
+        </a>
       </div>
     );
   }
@@ -72,8 +80,12 @@ export function ResetPassword() {
     <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-2xl font-bold">Enter your new password</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="text-2xl md:text-3xl font-bold">
+            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+              Enter your new password
+            </span>
+          </h1>
+          <p className="text-muted-foreground text-sm text-balance">
             Choose a strong password to secure your account
           </p>
         </div>

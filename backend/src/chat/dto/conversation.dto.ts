@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsObject, IsString, IsUUID } from "class-validator";
+import { IsNotEmpty, IsNumber, IsObject, IsString, IsUUID } from "class-validator";
 import { UserPreviewDto } from "src/users/dto/user-preview.dto";
 
 export class ConversationDto {
@@ -13,4 +13,8 @@ export class ConversationDto {
   @IsString({ message: 'Created at must be a string' })
   @IsNotEmpty({ message: 'Created at is required' })
   createdAt: Date;
+
+  @IsNumber({}, { message: 'Unread count must be a number' })
+  @IsNotEmpty({ message: 'Unread count is required' })
+  unreadCount: number;
 }

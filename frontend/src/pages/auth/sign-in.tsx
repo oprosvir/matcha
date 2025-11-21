@@ -39,9 +39,13 @@ export function Signin() {
     <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-2xl font-bold">Welcome back</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">
+            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+              Welcome back
+            </span>
+          </h1>
           <p className="text-muted-foreground text-balance">
-            Sign In to your Matcha account
+            Sign in to your Matcha account
           </p>
         </div>
         <Field>
@@ -58,7 +62,7 @@ export function Signin() {
             <FieldLabel htmlFor="password">Password</FieldLabel>
             <a
               href="/auth/forgot-password"
-              className="ml-auto text-sm underline-offset-2 hover:underline"
+              className="ml-auto text-sm text-primary hover:text-primary/80 underline-offset-4 hover:underline"
             >
               Forgot your password?
             </a>
@@ -75,7 +79,10 @@ export function Signin() {
           </Button>
         </Field>
         <FieldDescription className="text-center">
-          Don&apos;t have an account? <a href="/auth/sign-up">Sign Up</a>
+          Don&apos;t have an account?{" "}
+          <a href="/auth/sign-up" className="text-primary hover:text-primary/80 font-medium underline-offset-4 hover:underline">
+            Sign Up
+          </a>
         </FieldDescription>
       </FieldGroup>
     </form>

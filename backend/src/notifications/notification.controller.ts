@@ -1,20 +1,18 @@
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { type NotificationEvent } from './notification.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { CurrentUser } from 'src/auth/current-user.decorators';
-import { ReadNotificationsRequestDto } from './dto/read-notifications-request/read-notifications-request.dto';
+import { ReadNotificationsRequestDto, FindAllNotificationsResponseDto } from './dto';
 
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) { }
 
-  // TODO: Create DTOs for that
   @Get()
   @UseGuards(AuthGuard)
-  async findAllNotifications(@CurrentUser('sub') userId: string) {
-    const notifications: NotificationEvent[] = await this.notificationService.findAllNotifications(userId);
-    return { success: true, data: { notifications: notifications }, messageKey: 'SUCCESS_FIND_ALL_NOTIFICATIONS' };
+  async findAllNotifications(@CurrentUser('sub') userId: string): Promise<{ success: boolean, data: FindAllNotificationsResponseDto, messageKey: string }> {
+    const notifications = await this.notificationService.findAllNotifications(userId);
+    return { success: true, data: { notifications }, messageKey: 'SUCCESS_FIND_ALL_NOTIFICATIONS' };
   }
 
   @Post('read')

@@ -27,6 +27,16 @@ export function PhotoCarousel({ photos, userName }: PhotoCarouselProps) {
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
 
+  // Sort photos to show profile picture first
+  const sortedPhotos = React.useMemo(() => {
+    if (!photos || photos.length === 0) return [];
+    return [...photos].sort((a, b) => {
+      if (a.isProfilePic) return -1;
+      if (b.isProfilePic) return 1;
+      return 0;
+    });
+  }, [photos]);
+
   // Update current slide info
   React.useEffect(() => {
     if (!api) {
@@ -51,11 +61,11 @@ export function PhotoCarousel({ photos, userName }: PhotoCarouselProps) {
   }
 
   // If only one photo, show without carousel controls
-  if (photos.length === 1) {
+  if (sortedPhotos.length === 1) {
     return (
       <div className="relative w-full aspect-square rounded-lg overflow-hidden">
         <img
-          src={getPhotoUrl(photos[0].url)}
+          src={getPhotoUrl(sortedPhotos[0].url)}
           alt={userName ? `${userName}'s photo` : "Profile photo"}
           className="w-full h-full object-cover"
         />
@@ -67,7 +77,7 @@ export function PhotoCarousel({ photos, userName }: PhotoCarouselProps) {
     <div className="relative w-full flex flex-col">
       <Carousel setApi={setApi} className="w-full group flex-shrink-0">
         <CarouselContent>
-          {photos.map((photo) => (
+          {sortedPhotos.map((photo) => (
             <CarouselItem key={photo.id}>
               <div className="relative w-full aspect-square rounded-lg overflow-hidden">
                 <img
@@ -80,8 +90,8 @@ export function PhotoCarousel({ photos, userName }: PhotoCarouselProps) {
           ))}
         </CarouselContent>
         {/* Overlay arrow buttons - inside the image */}
-        <CarouselPrevious className="left-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-        <CarouselNext className="right-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <CarouselPrevious variant="ghost" className="left-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <CarouselNext variant="ghost" className="right-2 opacity-0 group-hover:opacity-100 transition-opacity" />
       </Carousel>
 
       {/* Dot indicators */}

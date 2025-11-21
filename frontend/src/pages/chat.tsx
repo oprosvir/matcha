@@ -88,6 +88,18 @@ function ConversationCardContent({
               );
             }
           );
+          // Decrement unread count for this conversation
+          queryClient.setQueryData(
+            ["conversations"],
+            (oldData: any) => {
+              if (!Array.isArray(oldData)) return oldData;
+              return oldData.map((conv: any) =>
+                conv.chatId === conversation.chatId
+                  ? { ...conv, unreadCount: Math.max(0, (conv.unreadCount || 0) - newlyVisible.length) }
+                  : conv
+              );
+            }
+          );
         }
       },
       { threshold: 0.6 }
@@ -155,7 +167,7 @@ function ConversationCardContent({
                 <div
                   className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg break-words ${
                     msg.senderId === user?.id
-                      ? "bg-blue-500 text-white"
+                      ? "bg-primary text-primary-foreground"
                       : "bg-muted text-foreground"
                   }`}
                 >
@@ -163,7 +175,7 @@ function ConversationCardContent({
                   <p
                     className={`text-xs mt-1 ${
                       msg.senderId === user?.id
-                        ? "text-blue-100"
+                        ? "opacity-90"
                         : "text-muted-foreground"
                     }`}
                   >
@@ -301,9 +313,9 @@ export function Chat() {
                 {conversations.map((conversation) => (
                   <div
                     key={conversation.chatId}
-                    className={`p-4 cursor-pointer hover:bg-accent transition-colors border-b last:border-b-0 ${
+                    className={`p-4 cursor-pointer hover:bg-accent/50 transition-colors border-b last:border-b-0 ${
                       selectedConversation?.chatId === conversation.chatId
-                        ? "bg-accent border-l-4 border-l-primary"
+                        ? "bg-primary/5 border-l-4 border-l-primary"
                         : ""
                     }`}
                     onClick={() => {
@@ -334,6 +346,11 @@ export function Chat() {
                             {conversation.profilePreview.firstName}{" "}
                             {conversation.profilePreview.lastName}
                           </p>
+                          {conversation.unreadCount > 0 && (
+                            <span className="flex-shrink-0 ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-wild-watermelon text-white text-xs font-semibold">
+                              {conversation.unreadCount}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

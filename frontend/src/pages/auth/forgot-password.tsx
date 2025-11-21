@@ -43,8 +43,12 @@ export function ForgotPassword() {
     <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-2xl font-bold">Reset your password</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold">
+            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+              Reset your password
+            </span>
+          </h1>
+          <p className="text-muted-foreground text-sm text-balance">
             Enter the email address associated with your account, and we'll send
             you a link to reset your password.
           </p>
@@ -74,7 +78,9 @@ export function ForgotPassword() {
           </Button>
         </Field>
         <FieldDescription className="text-center">
-          <a href="/auth/sign-in">Return to Sign In</a>
+          <a href="/auth/sign-in" className="text-primary hover:text-primary/80 font-medium underline-offset-4 hover:underline">
+            Return to Sign In
+          </a>
         </FieldDescription>
       </FieldGroup>
     </form>

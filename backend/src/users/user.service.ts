@@ -487,7 +487,7 @@ export class UserService {
   async resolveCityNameAndCountryNameByLatitudeAndLongitude(latitude: number, longitude: number): Promise<{ cityName: string, countryName: string }> {
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1`
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1&accept-language=en`
       );
       if (!response.ok) {
         throw new CustomHttpException(
@@ -542,7 +542,7 @@ export class UserService {
   async resolveLongitudeAndLatitudeByCityNameAndCountryName(cityName: string, countryName: string): Promise<{ longitude: number, latitude: number }> {
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?city=${cityName}&country=${countryName}&format=json&limit=1`
+        `https://nominatim.openstreetmap.org/search?city=${cityName}&country=${countryName}&format=json&limit=1&accept-language=en`
       );
       if (!response.ok) {
         throw new CustomHttpException(

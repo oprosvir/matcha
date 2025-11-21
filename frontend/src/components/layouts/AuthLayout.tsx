@@ -14,7 +14,7 @@ export function AuthLayout() {
               <div className="bg-muted relative hidden md:block">
                 <img
                   src={illustration}
-                  alt="Image"
+                  alt="Matcha illustration"
                   className="absolute inset-0 h-full w-full object-cover"
                 />
               </div>

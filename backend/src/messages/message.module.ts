@@ -7,9 +7,9 @@ import { ChatModule } from '../chat/chat.module';
 import { EventModule } from '../event/event.module';
 
 @Module({
-  imports: [DatabaseModule, ChatModule, forwardRef(() => EventModule)],
+  imports: [DatabaseModule, forwardRef(() => ChatModule), forwardRef(() => EventModule)],
   controllers: [MessageController],
   providers: [MessagesService, MessagesRepository],
-  exports: [MessagesService],
+  exports: [MessagesService, MessagesRepository],
 })
 export class MessagesModule { }

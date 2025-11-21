@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/ui/logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -53,9 +54,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center justify-between h-16">
             {/* Logo + Nav */}
             <div className="flex items-center gap-6">
-              <Link to="/" className="text-2xl font-bold text-primary">
-                Matcha
-              </Link>
+              <Logo />
 
               {/* Desktop nav */}
               <nav className="hidden md:flex gap-1">
@@ -77,8 +76,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                       <Icon className="w-4 h-4" />
                       {link.label}
                       {link.path === "/chat" && unreadMessagesCount > 0 && (
-                        <Badge className="ml-1 text-[10px] bg-blue-500">
-                          {unreadMessagesCount}
+                        <Badge className="ml-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-wild-watermelon text-white">
+                          {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
                         </Badge>
                       )}
                       {link.disabled && (
@@ -100,6 +99,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 size="icon"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
+                className="hover:!bg-muted hover:!text-foreground"
               >
                 {theme === 'light' ? (
                   <Moon className="h-5 w-5" />
@@ -154,9 +154,9 @@ export function AppLayout({ children }: AppLayoutProps) {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex flex-col items-center justify-center gap-1 min-w-[60px] py-2 rounded-lg transition-all duration-300 ease-in-out ${
+                className={`flex flex-col items-center justify-center gap-1 min-w-[60px] py-2 rounded-lg transition-all duration-300 ease-in-out [-webkit-tap-highlight-color:transparent] ${
                   isActive
-                    ? "bg-accent text-primary"
+                    ? "bg-accent text-accent-foreground"
                     : link.disabled
                     ? "text-muted-foreground cursor-not-allowed"
                     : "text-foreground hover:text-primary"
@@ -165,7 +165,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <div className="relative">
                   <Icon className="w-6 h-6 transition-all duration-300 ease-in-out" strokeWidth={isActive ? 2.5 : 2} />
                   {link.path === "/chat" && unreadMessagesCount > 0 && (
-                    <span className="absolute -top-1 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-blue-500 text-blue-500-foreground text-white rounded-full">
+                    <span className="absolute -top-1 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-wild-watermelon text-white rounded-full">
                       {unreadMessagesCount}
                     </span>
                   )}

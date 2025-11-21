@@ -64,7 +64,7 @@ export function createSuggestedColumns(): ColumnDef<UserListItem>[] {
         return <DataTableColumnHeader column={column} title="Fame Rating" />;
       },
       cell: ({ row }) => {
-        return <div>{`${row.original.fameRating}`}</div>;
+        return <div>{row.original.fameRating}</div>;
       },
       filterFn: (row, id, value) => {
         const fameRating = row.getValue(id) as number;
@@ -140,9 +140,9 @@ export function createSuggestedColumns(): ColumnDef<UserListItem>[] {
       },
       cell: ({ row }) => {
         return (
-          <div className="max-w-[400px] overflow-x-auto">
+          <div className="max-w-full @md:max-w-[400px] flex flex-wrap gap-1">
             {row.original.interests.map((interest) => (
-              <Badge key={interest.id} className="mr-2">
+              <Badge key={interest.id} variant="outline" className="text-xs rounded-full bg-muted border-muted text-foreground transition-all hover:bg-secondary hover:border-secondary dark:bg-[oklch(0.280_0.020_132)] dark:text-[oklch(0.830_0.084_116)] dark:border-[oklch(0.280_0.020_132)] dark:hover:bg-[oklch(0.320_0.030_132)] dark:hover:text-[oklch(0.95_0.008_136)] dark:hover:border-[oklch(0.320_0.030_132)]">
                 {interest.name}
               </Badge>
             ))}

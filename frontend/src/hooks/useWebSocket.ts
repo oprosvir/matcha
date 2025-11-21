@@ -23,28 +23,40 @@ export function useWebSocket(enabled: boolean = true): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
 
   const triggerConfetti = () => {
-    const end = Date.now() + 3 * 1000;
-    const colors = ['#a786ff', '#fd8bbc', '#eca184', '#f8deb1'];
+    const duration = 2 * 1000;
+    const end = Date.now() + duration;
+
+    // Logo gradient colors: Wild Watermelon, Champagne Pink, Greenish Beige, Avocado Green
+    const logoColors = ['#DF6A9A', '#E3AEB9', '#C4CF90', '#97A941'];
+
     const frame = () => {
       if (Date.now() > end) return;
+
+      // Left side burst
       confetti({
-        particleCount: 2,
+        particleCount: 5,
         angle: 60,
         spread: 55,
         startVelocity: 60,
         origin: { x: 0, y: 0.5 },
-        colors: colors,
+        colors: logoColors,
+        disableForReducedMotion: true,
       });
+
+      // Right side burst
       confetti({
-        particleCount: 2,
+        particleCount: 5,
         angle: 120,
         spread: 55,
         startVelocity: 60,
         origin: { x: 1, y: 0.5 },
-        colors: colors,
+        colors: logoColors,
+        disableForReducedMotion: true,
       });
+
       requestAnimationFrame(frame);
     }
+
     frame();
   }
 
@@ -149,6 +161,15 @@ export function useWebSocket(enabled: boolean = true): UseWebSocketReturn {
       queryClient.setQueryData(['unreadMessagesCount'], (oldData: number | undefined) => {
         if (!oldData) return 1;
         return oldData + 1;
+      });
+      // Optimistically increment unread count for this conversation
+      queryClient.setQueryData(['conversations'], (oldData: any) => {
+        if (!Array.isArray(oldData)) return oldData;
+        return oldData.map((conv: any) =>
+          conv.chatId === message.chatId
+            ? { ...conv, unreadCount: (conv.unreadCount || 0) + 1 }
+            : conv
+        );
       });
     }
     // Invalidate conversations to update chat order
