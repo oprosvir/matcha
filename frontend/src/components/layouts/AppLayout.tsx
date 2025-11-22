@@ -165,9 +165,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <div className="relative">
                   <Icon className="w-6 h-6 transition-all duration-300 ease-in-out" strokeWidth={isActive ? 2.5 : 2} />
                   {link.path === "/chat" && unreadMessagesCount > 0 && (
-                    <span className="absolute -top-1 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-wild-watermelon text-white rounded-full">
+                    <Badge className="absolute -top-1 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-wild-watermelon text-white">
                       {unreadMessagesCount}
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 <span

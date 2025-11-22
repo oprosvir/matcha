@@ -73,23 +73,18 @@ export function Dashboard() {
                 {/* User Info */}
                 <div className="flex-1">
                   <div className="text-center md:text-left">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 mb-3">
-                      <div>
-                        <h2 className="text-2xl font-bold">
-                          {user.firstName} {user.lastName}
-                          {user.dateOfBirth && (
-                            <span className="text-muted-foreground font-normal">
-                              , {calculateAge(user.dateOfBirth)}
-                            </span>
-                          )}
-                        </h2>
-                        <p className="text-muted-foreground text-sm">
-                          @{user.username}
-                        </p>
-                      </div>
-                      <Button variant="outline" className="w-full md:w-auto" onClick={() => setIsEditDialogOpen(true)}>
-                        Edit Profile
-                      </Button>
+                    <div>
+                      <h2 className="text-2xl font-bold">
+                        {user.firstName} {user.lastName}
+                        {user.dateOfBirth && (
+                          <span className="text-muted-foreground font-normal">
+                            , {calculateAge(user.dateOfBirth)}
+                          </span>
+                        )}
+                      </h2>
+                      <p className="text-muted-foreground text-sm">
+                        @{user.username}
+                      </p>
                     </div>
                   </div>
 
@@ -145,6 +140,13 @@ export function Dashboard() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex md:flex-col gap-2 justify-center md:justify-start">
+                  <Button variant="outline" className="md:w-auto" onClick={() => setIsEditDialogOpen(true)}>
+                    Edit Profile
+                  </Button>
                 </div>
               </div>
             </CardContent>

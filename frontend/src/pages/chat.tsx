@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Send, ArrowLeft, MoreVertical, Ban, Flag } from "lucide-react";
 import { useConversations } from "@/hooks/useConversations";
 import type { Conversation } from "@/types/chat";
@@ -347,9 +348,9 @@ export function Chat() {
                             {conversation.profilePreview.lastName}
                           </p>
                           {conversation.unreadCount > 0 && (
-                            <span className="flex-shrink-0 ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-wild-watermelon text-white text-xs font-semibold">
+                            <Badge className="flex-shrink-0 ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center text-xs font-semibold bg-wild-watermelon text-white">
                               {conversation.unreadCount}
-                            </span>
+                            </Badge>
                           )}
                         </div>
                       </div>

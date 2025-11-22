@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import type { ReactNode } from "react";
 import { tokenManager } from "@/utils/tokenManager";
@@ -29,9 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [refreshTimer, setRefreshTimer] = useState<ReturnType<
-    typeof setTimeout
-  > | null>(null);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     data: user,
@@ -44,9 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const signOut = useCallback(async () => {
-    if (refreshTimer) {
-      clearTimeout(refreshTimer);
-      setRefreshTimer(null);
+    if (refreshTimer.current) {
+      clearTimeout(refreshTimer.current);
+      refreshTimer.current = null;
     }
     try {
       await authApi.signOut();
@@ -57,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear all cached data on logout
       queryClient.clear();
     }
-  }, [refreshTimer, queryClient]);
+  }, [queryClient]);
 
   const refreshAccessToken = useCallback(async (): Promise<boolean> => {
     try {
@@ -69,9 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const scheduleTokenRefresh = useCallback(() => {
-    if (refreshTimer) {
-      clearTimeout(refreshTimer);
+  const scheduleTokenRefresh = useCallback(async () => {
+    if (refreshTimer.current) {
+      clearTimeout(refreshTimer.current);
     }
 
     const expiry = tokenManager.getTokenExpiry();
@@ -81,14 +80,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const timeUntilRefresh = expiry - Date.now() - 60 * 1000;
 
     if (timeUntilRefresh > 0) {
-      const timer = setTimeout(() => {
-        refreshAccessToken();
+      const timer = setTimeout(async () => {
+        const success = await refreshAccessToken();
+        if (success) {
+          scheduleTokenRefresh();
+        } else {
+          await signOut();
+        }
       }, timeUntilRefresh);
-      setRefreshTimer(timer);
+      refreshTimer.current = timer;
     } else {
-      refreshAccessToken();
+      const success = await refreshAccessToken();
+      if (success) {
+        scheduleTokenRefresh();
+      } else {
+        await signOut();
+      }
     }
-  }, [refreshTimer, refreshAccessToken]);
+  }, [refreshAccessToken, signOut]);
 
   const signIn = useCallback(
     (accessToken: string) => {
@@ -123,11 +132,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
 
     return () => {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer);
+      if (refreshTimer.current) {
+        clearTimeout(refreshTimer.current);
       }
     };
-  }, []);
+  }, [scheduleTokenRefresh, refreshAccessToken]);
 
   return (
     <AuthContext.Provider
