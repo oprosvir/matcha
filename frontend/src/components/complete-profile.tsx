@@ -331,7 +331,7 @@ export function CompleteProfileForm({ user }: { user: User }) {
                               <TagsItem
                                 key={interest.id}
                                 onSelect={() => handleInterestToggle(interest.id)}
-                                value={interest.id}
+                                value={interest.name}
                                 disabled={(selectedInterests?.length || 0) >= 10}
                               >
                                 {interest.name}

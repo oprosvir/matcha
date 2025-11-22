@@ -628,9 +628,11 @@ export class UsersRepository {
 
       conditions.push(`u.profile_completed = TRUE`);
 
-      // Exclude users who blocked current user (but keep users current user blocked)
+      // Exclude blocked users (both ways: who I blocked and who blocked me)
       conditions.push(`u.id NOT IN (
         SELECT blocker_id FROM blocks WHERE blocked_id = $${paramIndex}
+        UNION
+        SELECT blocked_id FROM blocks WHERE blocker_id = $${paramIndex}
       )`);
       params.push(currentUserId);
       paramIndex++;

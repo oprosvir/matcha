@@ -112,7 +112,7 @@ export function InterestsSelector({ currentInterests }: InterestsSelectorProps) 
                   <TagsItem
                     key={interest.id}
                     onSelect={() => handleInterestToggle(interest.id)}
-                    value={interest.id}
+                    value={interest.name}
                     disabled={isMaxReached}
                   >
                     {interest.name}

@@ -25,7 +25,7 @@ export const messageMap: Record<string, string> = {
   "ERROR_CANNOT_VIEW_OWN_PROFILE": "You cannot view your own profile this way. Use the profile page instead",
   "ERROR_EMAIL_ALREADY_EXISTS": "This email is already in use by another account. Please use a different email address",
   "ERROR_EMAIL_ALREADY_VERIFIED": "Email already verified. Please sign in",
-  "ERROR_EMAIL_OR_USERNAME_ALREADY_EXISTS": "Email or username already exists. Please use a different one",
+  "ERROR_USERNAME_OR_EMAIL_ALREADY_EXISTS": "Username or email already exists. Please use a different one",
   "ERROR_FAILED_TO_RESOLVE_LOCATION": "Failed to resolve location. Please try again",
   "ERROR_FILE_TOO_LARGE": "File size exceeds the maximum limit of 5MB. Please choose a smaller image",
   "ERROR_FORBIDDEN": "You don't have permission to perform this action",
