@@ -395,15 +395,15 @@ This project was built by a team of two developers:
 
 <table>
   <tr>
-    <td align="center" width="50%">
-      <img src="https://github.com/oprosvir.png" width="100" style="border-radius: 50%"><br>
+    <td align="center" width="50%" valign="top">
+      <img src="https://github.com/oprosvir.png" width="100"><br>
       <b>Olga Prosviriakova</b><br>
       <a href="https://github.com/oprosvir">@oprosvir</a><br>
       <br>
       <sub>UI/UX Design & Theming • Photo Management<br>Profile & Activity System • Location & Maps<br>Fame Rating • Security & Validation<br>Interests • Block/Report • Documentation</sub>
     </td>
-    <td align="center" width="50%">
-      <img src="https://github.com/ismaelmehdid.png" width="100" style="border-radius: 50%"><br>
+    <td align="center" width="50%" valign="top">
+      <img src="https://github.com/ismaelmehdid.png" width="100"><br>
       <b>Ismaël Mehdid</b><br>
       <a href="https://github.com/ismaelmehdid">@ismaelmehdid</a><br>
       <br>
